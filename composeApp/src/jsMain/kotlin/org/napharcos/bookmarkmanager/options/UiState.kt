@@ -1,0 +1,20 @@
+package org.napharcos.bookmarkmanager.options
+
+import org.napharcos.bookmarkmanager.Bookmarks
+
+data class UiState(
+    val background: String = "",
+    val textColor: Int = 190,
+    val cardSize: Int = 300,
+    val darkening: Boolean = true,
+    val selectedFolder: String = "",
+    val openFolders: List<String> = emptyList(),
+    val folders: List<Bookmarks> = emptyList(),
+    val folderContent: List<Bookmarks> = emptyList(),
+    val showingChangeBackgroundDialog: Boolean = false,
+    val showingImportBookmarksDialog: Boolean = false,
+    val showingExportBookmarksDialog: Boolean = false,
+    val showindAddNewElementDialog: Boolean = false,
+    val editElement: Bookmarks? = null,
+    val selectedElements: List<String> = emptyList()
+)

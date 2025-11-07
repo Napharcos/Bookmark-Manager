@@ -1,0 +1,26 @@
+{
+  "app_name": {
+    "message": "Bookmark Manager"
+  },
+  "add_bookmark": {
+    "message": "Add bookmark"
+  },
+  "open_options": {
+    "message": "Open bookmark view ↗"
+  },
+  "ok": {
+    "message": "Ok"
+  },
+  "bookmarks": {
+    "message": "Bookmarks"
+  },
+  "text_color": {
+    "message": "Text color: "
+  },
+  "card_size": {
+    "message": "Elements size: "
+  },
+  "darkened_background": {
+    "message": "Darkened background: "
+  }
+}

@@ -1,0 +1,92 @@
+{
+  "app_name": {
+    "message": "Könyvjelző kezelő"
+  },
+  "add_bookmark": {
+    "message": "Könyvjelző hozzáadása"
+  },
+  "open_options": {
+    "message": "Könyvjelző nézet megnyitása ↗"
+  },
+  "ok": {
+    "message": "Ok"
+  },
+  "bookmarks": {
+    "message": "Könyvjelzők"
+  },
+  "text_color": {
+    "message": "Szöveg színe: "
+  },
+  "card_size": {
+    "message": "Elemek mérete: "
+  },
+  "darkened_background": {
+    "message": "Sötétített háttér: "
+  },
+  "loading_file": {
+    "message": "Fájl beolvasása..."
+  },
+  "loading_add_bookmark": {
+    "message": "Könyvjelző hozzáadása: $1"
+  },
+  "loading_update_bookmark": {
+    "message": "Könyvjelző frissítése: $1"
+  },
+  "trash": {
+    "message": "Kuka"
+  },
+  "change_background": {
+    "message": "Háttérkép módosítása"
+  },
+  "background_image_url": {
+    "message": "Kép elérési út (URL): "
+  },
+  "or": {
+    "message": "vagy"
+  },
+  "browse": {
+    "message": "Tallózás"
+  },
+  "remove": {
+    "message": "Eltávolítás"
+  },
+  "import_bookmarks": {
+    "message": "Könyvjelzők importálása"
+  },
+  "import_bookmarks_file": {
+    "message": "Könyvjelző fájl importálása"
+  },
+  "import_bookmarks_image_opera": {
+    "message": "Könyvjelző képek importálása az Opperából"
+  },
+  "import_bookmarks_image_vivaldi": {
+    "message": "Könyvjelző képek importálása a Vivaldiból"
+  },
+  "cancel": {
+    "message": "Mégse"
+  },
+  "confirm": {
+    "message": "Megerősítés"
+  },
+  "add_new_element": {
+    "message": "Új elem hozzáadása"
+  },
+  "folder": {
+    "message": "Mappa"
+  },
+  "bookmark": {
+    "message": "Könyvjelző"
+  },
+  "name": {
+    "message": "Név: "
+  },
+  "path": {
+    "message": "Elérési út (URL): "
+  },
+  "type": {
+    "message": "Típus: "
+  },
+  "edit_element": {
+    "message": "Elem módosítása"
+  }
+}

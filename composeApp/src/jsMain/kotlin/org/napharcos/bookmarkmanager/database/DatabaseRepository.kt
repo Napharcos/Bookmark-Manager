@@ -1,0 +1,23 @@
+package org.napharcos.bookmarkmanager.database
+
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
+import org.napharcos.bookmarkmanager.Bookmarks
+
+interface DatabaseRepository {
+
+    suspend fun deleteDB()
+    fun addBookmark(bookmark: Bookmarks, override: Boolean = false)
+
+    suspend fun updateImage(coroutine: CoroutineScope, uuid: String, image: String)
+
+    suspend fun getFolders(scope: CoroutineScope): List<Bookmarks>
+
+    suspend fun getSpecificFolders(scope: CoroutineScope, parentId: String): List<Bookmarks>
+
+    suspend fun getChilds(scope: CoroutineScope, parentId: String): List<Bookmarks>
+
+    suspend fun getBookmark(scope: CoroutineScope, uuid: String): Bookmarks?
+
+    suspend fun getBookmarkByImage(scope: CoroutineScope, imageId: String): Bookmarks?
+}
