@@ -1,6 +1,7 @@
 package org.napharcos.bookmarkmanager
 
 import androidx.compose.runtime.Composable
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.DisplayStyle
@@ -36,6 +37,7 @@ import org.jetbrains.compose.web.css.width
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Hr
 import org.jetbrains.compose.web.dom.Text
+import org.napharcos.bookmarkmanager.data.Constants
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
@@ -120,4 +122,31 @@ fun StyleScope.dialogBackground() {
     display(DisplayStyle.Flex)
     justifyContent(JustifyContent.Center)
     alignItems(AlignItems.Center)
+}
+
+enum class DragZone { BEFORE, AFTER, INSIDE }
+
+fun List<Bookmarks>.addPlaceholder(
+    selectedElements: List<String>,
+    element: String,
+    target: String,
+    dragZone: DragZone?
+): List<Bookmarks> {
+    val movingIds = (selectedElements + element).distinct()
+    val list = this.filterNot { it.uuid in movingIds || it.type == Constants.FAKE }.toMutableList()
+    val targetIndex = list.indexOfFirst { it.uuid == target }
+    if (targetIndex == -1) return this
+
+    val placeholder = Bookmark(
+        uuid = Constants.FAKE,
+        name = "",
+        type = Constants.FAKE,
+        index = -1,
+        imageId = "",
+        image = ""
+    )
+
+    val insertPos = if (dragZone == DragZone.BEFORE) targetIndex else (targetIndex + 1).coerceAtMost(list.size)
+    list.add(insertPos, placeholder)
+    return if (dragZone != DragZone.INSIDE) list else this.filter { it.type != Constants.FAKE }
 }

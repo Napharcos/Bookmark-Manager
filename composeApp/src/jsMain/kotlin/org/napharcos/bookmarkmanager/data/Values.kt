@@ -30,4 +30,10 @@ object Values {
     const val NAME = "name"
     const val PATH = "path"
     const val TYPE = "type"
+    const val MOVE_TRASH_TITLE = "move_trash_title"
+    const val MOVE_TRASH_TEXT = "move_trash_text"
+    const val DELETE_TITLE = "delete_title"
+    const val DELETE_TEXT = "delete_text"
+    const val CLEAR_TRASH = "clear_trash"
+    const val CLEAR_TRASH_BUTTON = "clear_trash_button"
 }

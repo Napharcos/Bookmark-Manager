@@ -9,19 +9,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.napharcos.bookmarkmanager.AppScope
-import org.napharcos.bookmarkmanager.Bookmark
-import org.napharcos.bookmarkmanager.Bookmarks
-import org.napharcos.bookmarkmanager.ImportManager
+import org.napharcos.bookmarkmanager.*
 import org.napharcos.bookmarkmanager.container.Container
-import org.napharcos.bookmarkmanager.copy
 import org.napharcos.bookmarkmanager.data.Constants
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.get
 import org.w3c.dom.set
 import org.w3c.files.FileReader
 import org.w3c.files.get
-import kotlin.text.ifEmpty
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -61,10 +56,28 @@ class OptionsViewModel(private val container: Container) {
                     openFolders = listOf(""),
                     selectedFolder = "",
                     folders = newFolders,
-                    folderContent = container.browserDatabase.getChilds(this, "").createImageIfNotExist(),
+                    folderContent = container.browserDatabase.getChilds(this, "").createImageIfNotExist().sortedBy { c -> c.index },
                     selectedElements = emptyList()
                 )
             }
+        }
+    }
+
+    fun updateShowingClearTrash(showing: Boolean) {
+        _uiState.update {
+            it.copy(showingClearTrashDialog = showing)
+        }
+    }
+
+    fun clearTrashElements() {
+        _uiState.update {
+            it.copy(trashElements = emptyList())
+        }
+    }
+
+    fun updateDeleteElements(list: List<String>) {
+        _uiState.update {
+            it.copy(deleteElements = list)
         }
     }
 
@@ -92,12 +105,6 @@ class OptionsViewModel(private val container: Container) {
         }
     }
 
-//    fun deleteElement(element: Bookmarks?) {
-//        _uiState.update {
-//            it.copy(deleteElement = element)
-//        }
-//    }
-
     fun onSelectElementClick(select: Boolean, bookmark: String) {
         _uiState.update {
             it.copy(
@@ -114,6 +121,51 @@ class OptionsViewModel(private val container: Container) {
             )
         }
         window.localStorage[Constants.BACKGROUND] = image
+    }
+
+    fun clearTrash() {
+        AppScope.scope.launch {
+            val browserTrashElements = container.browserDatabase.getChilds(this, Constants.TRASH)
+            val serverTrashElements = container.serverDatabase?.getChilds(this, Constants.TRASH)
+
+            val allElements = (browserTrashElements.map { it.uuid } + (serverTrashElements?.map { it.uuid } ?: emptyList()))
+                .distinct()
+
+            allElements.forEach {
+                deleteElementsRecursive(this, it, mutableSetOf())
+            }
+            updateShowingClearTrash(false)
+            reloadData()
+        }
+    }
+
+    fun deleteElements() {
+        val elements = uiState.value.deleteElements
+
+        AppScope.scope.launch {
+            elements.forEach {
+                deleteElementsRecursive(this, it, mutableSetOf())
+            }
+            updateDeleteElements(emptyList())
+            reloadData()
+        }
+    }
+
+    suspend fun deleteElementsRecursive(scope: CoroutineScope, element: String, visited: MutableSet<String>) {
+        if (!visited.add(element)) return
+
+        val browserChilds = container.browserDatabase.getChilds(scope, element)
+        val serverChilds = container.serverDatabase?.getChilds(scope, element)
+
+        container.browserDatabase.deleteBookmark(scope, element)
+        container.serverDatabase?.deleteBookmark(scope, element)
+
+        val allChilds = (browserChilds.map { it.uuid } + (serverChilds?.map { it.uuid } ?: emptyList()))
+            .distinct()
+
+        allChilds.forEach { child ->
+            deleteElementsRecursive(scope, child, visited)
+        }
     }
 
     @OptIn(ExperimentalUuidApi::class)
@@ -138,11 +190,13 @@ class OptionsViewModel(private val container: Container) {
         }
     }
 
+    @OptIn(ExperimentalUuidApi::class)
     fun onEditConfirmClick(bookmark: Bookmarks, name: String, url: String, image: String) {
         AppScope.scope.launch {
             val newBookmark = bookmark.copy(
                 name = name.ifEmpty { bookmark.name },
                 url = url.ifEmpty { bookmark.url },
+                imageId = if (image.isNotEmpty()) Uuid.random().toHexString() else bookmark.imageId,
                 image = image.ifEmpty { bookmark.image }
             )
 
@@ -150,20 +204,6 @@ class OptionsViewModel(private val container: Container) {
             container.serverDatabase?.addBookmark(newBookmark, true)
             reloadData()
             updateEditElement(null)
-        }
-    }
-
-    fun onDeleteConfirmClick(bookmark: Bookmarks) {
-        AppScope.scope.launch {
-            val newBookmark = bookmark.copy(
-                parentId = Constants.TRASH,
-                undoTrash = bookmark.parentId,
-                index = getNextIndex(this, Constants.TRASH)
-            )
-            container.browserDatabase.addBookmark(newBookmark, true)
-            container.serverDatabase?.addBookmark(newBookmark, true)
-            reloadData()
-            //deleteElement(null)
         }
     }
 
@@ -175,6 +215,64 @@ class OptionsViewModel(private val container: Container) {
             browserChilds.maxByOrNull { it.index }?.index ?: 0,
             serverChilds?.maxByOrNull { it.index }?.index ?: 0
         ) + 1
+    }
+
+    fun reindexElements(element: String, target: String, before: Boolean) {
+        val selected = (uiState.value.selectedElements + element).distinct()
+        val list = uiState.value.folderContent.sortedBy { it.index }
+        val targetData = list.first { it.uuid == target }
+        val targetIndex = targetData.index
+
+        val staticPart = if (before)
+            list.filter { it.index < targetIndex && it.uuid !in selected }
+        else
+            list.filter { it.index <= targetIndex && it.uuid !in selected }
+
+        val movingPart = list.filter { it.uuid in selected }
+
+        val trailingPart = if (before)
+            list.filter { it.index >= targetIndex && it.uuid !in selected }
+        else list.filter { it.index > targetIndex && it.uuid !in selected }
+
+        val newOrder = staticPart + movingPart + trailingPart
+
+        AppScope.scope.launch {
+            newOrder.forEachIndexed { i, item ->
+                val newBookmark = item.copy(index = i)
+                container.browserDatabase.addBookmark(newBookmark, true)
+            }
+            reloadData()
+        }
+    }
+
+    fun moveElementToFolder(element: String, target: String, confirmed: Boolean = false, onlyOne: Boolean = false) {
+        val elements = if (!onlyOne) (uiState.value.selectedElements + element).distinctBy { it } else listOf(element)
+        val elementsData = uiState.value.folderContent.filter { it.uuid in elements }
+
+        AppScope.scope.launch {
+            if (target == Constants.TRASH && !confirmed) {
+                _uiState.update { it.copy(trashElements = elementsData.map { e -> e.uuid }) }
+                return@launch
+            }
+
+            var nextIndex = getNextIndex(this, target)
+
+            elementsData.forEach {
+                val newBookmark = when (target) {
+                    Constants.TRASH -> it.copy(parentId = target, undoTrash = it.parentId, index = nextIndex)
+                    it.undoTrash -> it.copy(parentId = it.undoTrash, undoTrash = "", index = nextIndex)
+                    else -> it.copy(parentId = target, index = nextIndex)
+                }
+
+                container.browserDatabase.addBookmark(newBookmark, override = true)
+                container.serverDatabase?.addBookmark(newBookmark, true)
+
+                nextIndex++
+            }
+
+            _uiState.update { it.copy(trashElements = emptyList()) }
+            reloadData()
+        }
     }
 
     suspend fun onBrowseImageClick(): String {
@@ -216,7 +314,7 @@ class OptionsViewModel(private val container: Container) {
             _uiState.update {
                 it.copy(
                     folders = newFolders.distinctBy { f -> f.uuid },
-                    folderContent = container.browserDatabase.getChilds(this, it.selectedFolder).createImageIfNotExist(),
+                    folderContent = container.browserDatabase.getChilds(this, it.selectedFolder).createImageIfNotExist().sortedBy { c -> c.index },
                     selectedElements = emptyList()
                 )
             }
@@ -263,7 +361,7 @@ class OptionsViewModel(private val container: Container) {
                 _uiState.update {
                     it.copy(
                         selectedFolder = uuid,
-                        folderContent = container.browserDatabase.getChilds(this, uuid).createImageIfNotExist(),
+                        folderContent = container.browserDatabase.getChilds(this, uuid).createImageIfNotExist().sortedBy { c -> c.index },
                         selectedElements = emptyList()
                     )
                 }

@@ -6,7 +6,6 @@ import androidx.compose.runtime.setValue
 import kotlinx.browser.document
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import org.napharcos.bookmarkmanager.data.Constants
@@ -48,7 +47,11 @@ class ImportManager(
         input.type = "file"
 
         input.onchange = { _ ->
-            input.files?.get(0)?.readBookmarksJson()
+            input.files?.get(0)?.let {
+                if (it.size.toDouble() > 50 * 1024 * 1024)
+                   importLargeJsonFile(it)
+                else it.readBookmarksJson()
+            }
         }
 
         input.click()
@@ -179,14 +182,7 @@ class ImportManager(
                 val images = Json.decodeFromString<Map<String, String>>(data)
 
                 images.forEach { (imageId, image) ->
-                    val bookmark = browserDBRepository.getBookmarkByImage(this, imageId)
-
-                    bookmark?.let {
-                        loadingText = getString(Values.LOADING_UPDATE_BOOKMARK, bookmark.name)
-
-                        browserDBRepository.updateImage(this, bookmark.uuid, "data:image/jpeg;base64,$image")
-                        serverDBRepository?.updateImage(this, bookmark.uuid, "data:image/jpeg;base64,$image")
-                    }
+                    saveData(this, imageId, image)
                 }
                 isLoading = false
                 loadingText = ""
@@ -198,6 +194,88 @@ class ImportManager(
         }
 
         reader.readAsText(this)
+    }
+
+    suspend fun saveData(scope: CoroutineScope, imageId: String, image: String) {
+        val bookmark = browserDBRepository.getBookmarkByImage(scope, imageId)
+
+        bookmark?.let {
+            loadingText = getString(Values.LOADING_UPDATE_BOOKMARK, bookmark.name)
+
+            browserDBRepository.updateImage(scope, bookmark.uuid, "data:image/jpeg;base64,$image")
+            serverDBRepository?.updateImage(scope, bookmark.uuid, "data:image/jpeg;base64,$image")
+        }
+    }
+
+    fun importLargeJsonFile(file: File) {
+        AppScope.scope.launch {
+            isLoading = true
+            loadingText = getString(Values.LOADING_FILE)
+            val reader = (file as Blob).stream().getReader()
+            val decoder = TextDecoder("utf-8")
+
+            var insideKey = false
+            var insideValue = false
+            var key = ""
+            var value = ""
+            var isEscaped = false
+
+            suspend fun processBufferChar(c: Char) {
+                when {
+                    insideKey -> {
+                        if (isEscaped) {
+                            key += c
+                            isEscaped = false
+                        } else if (c == '\\') {
+                            isEscaped = true
+                        } else if (c == '"') {
+                            insideKey = false
+                        } else {
+                            key += c
+                        }
+                    }
+
+                    insideValue -> {
+                        if (isEscaped) {
+                            value += c
+                            isEscaped = false
+                        } else if (c == '\\') {
+                            isEscaped = true
+                        } else if (c == '"') {
+                            insideValue = false
+                            // Kulcs–érték kész, feldolgozzuk
+                            saveData(this, key, value)
+                            key = ""
+                            value = ""
+                        } else {
+                            value += c
+                        }
+                    }
+
+                    else -> {
+                        if (c == '"') {
+                            if (key.isEmpty()) {
+                                insideKey = true
+                            } else if (!insideValue) {
+                                insideValue = true
+                            }
+                        }
+                    }
+                }
+            }
+
+            while (true) {
+                val chunkResult = reader.read().await()
+                if (chunkResult.done) break
+
+                val chunkText = decoder.decode(chunkResult.value)
+                for (c in chunkText) {
+                    processBufferChar(c)
+                }
+            }
+            isLoading = false
+            loadingText = ""
+        }
     }
 
     private suspend fun File.readImage() {

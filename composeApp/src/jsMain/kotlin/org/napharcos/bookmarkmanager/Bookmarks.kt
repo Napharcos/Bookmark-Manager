@@ -15,7 +15,7 @@ data class BookmarksTree(
 )
 
 fun List<Bookmarks>.buildTree(): List<BookmarksTree> =
-    this.groupBy { it.parentId }.buildTree()
+    this.sortedBy { it.index }.groupBy { it.parentId }.buildTree()
 
 private fun Map<String, List<Bookmarks>>.buildTree(parentId: String = ""): List<BookmarksTree> {
     return this[parentId]?.map {

@@ -6,8 +6,11 @@ import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Div
 import org.napharcos.bookmarkmanager.*
 import org.napharcos.bookmarkmanager.container.ContainerImpl
+import org.napharcos.bookmarkmanager.data.Constants
+import org.napharcos.bookmarkmanager.data.Values
 import org.napharcos.bookmarkmanager.options.ui.ChangeBackgroundDialog
 import org.napharcos.bookmarkmanager.options.ui.ConfirmDialog
+import org.napharcos.bookmarkmanager.options.ui.DialogSummary
 import org.napharcos.bookmarkmanager.options.ui.EditElementDialog
 import org.napharcos.bookmarkmanager.options.ui.FolderElementsList
 import org.napharcos.bookmarkmanager.options.ui.ImportDialog
@@ -57,44 +60,8 @@ fun OptionsSummary() {
         NavRail(viewModel, uiState, windowHeight)
         MainPage(viewModel, uiState)
     }
-    if (uiState.showingChangeBackgroundDialog)
-        ChangeBackgroundDialog(
-            viewModel = viewModel,
-            uiState = uiState,
-            onClose = { viewModel.updateShowingChangeBackground(false) },
-            onConfirm = { viewModel.onBackgroundConfirmClick(it)  }
-        )
 
-    if (uiState.showindAddNewElementDialog)
-        NewElementDialog(
-            viewModel = viewModel,
-            onCancel = { viewModel.updateShowingNewElement(false) },
-            onConfirm = { type, name, url, image -> viewModel.onAddNewElementConfirmClick(type, name, url, image) }
-        )
-
-    uiState.editElement?.let {
-        EditElementDialog(
-            viewModel = viewModel,
-            bookmark = it,
-            onCancel = { viewModel.updateEditElement(null) },
-            onConfirm = { bookmark, name, url, image -> viewModel.onEditConfirmClick(bookmark, name, url, image) }
-        )
-    }
-
-//    uiState.deleteElement?.let {
-//        ConfirmDialog(
-//            title = getString(),
-//            text = getString(),
-//            onClose = { viewModel.deleteElement(null) },
-//            onConfirm = { viewModel.onDeleteConfirmClick(it) }
-//        )
-//    }
-
-    if (uiState.showingImportBookmarksDialog)
-        ImportDialog(viewModel) { viewModel.updateShowingImportDialog(false) }
-
-    if (ImportManager.isLoading)
-        LoadingDialog(ImportManager.loadingText)
+    DialogSummary(uiState, viewModel)
 }
 
 @Composable

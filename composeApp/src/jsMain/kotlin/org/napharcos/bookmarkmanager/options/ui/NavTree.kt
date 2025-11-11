@@ -40,11 +40,13 @@ fun BookmarksNavTree(
             uiState = uiState
         )
         NavElement(
+            uuid = Constants.TRASH,
             folderName = "\uD83D\uDDD1\uFE0F " + getString(Values.TRASH),
             selected = uiState.selectedFolder == Constants.TRASH,
             onFoldClick = {},
             onElementClick = { viewModel.onNavElementClick(null, Constants.TRASH) },
-            uiState = uiState
+            uiState = uiState,
+            viewModel = viewModel
         )
     }
 }
@@ -61,10 +63,12 @@ fun NavTree(
         val isOpen = it.folder.uuid in openFolders
 
         NavElement(
+            uuid = it.folder.uuid,
             folderName = folderNameBuilder(depth, it.folder.name, isOpen, it.children.isNotEmpty()),
             selected = uiState.selectedFolder == it.folder.uuid,
             onFoldClick = { viewModel.onNavElementFoldClick(it.folder.uuid) },
             onElementClick = { viewModel.onNavElementClick(it.folder, it.folder.uuid) },
+            viewModel = viewModel,
             uiState = uiState
         )
 

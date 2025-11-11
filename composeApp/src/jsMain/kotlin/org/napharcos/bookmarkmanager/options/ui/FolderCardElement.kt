@@ -1,6 +1,8 @@
 package org.napharcos.bookmarkmanager.options.ui
 
 import androidx.compose.runtime.*
+import androidx.compose.web.events.SyntheticDragEvent
+import org.jetbrains.compose.web.attributes.Draggable
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Img
@@ -12,6 +14,7 @@ import kotlin.math.roundToInt
 @Composable
 fun FolderCardElement(
     uuid: String,
+    parent: String,
     image: String,
     name: String,
     url: String,
@@ -20,11 +23,17 @@ fun FolderCardElement(
     selected: Boolean,
     size: Int,
     onClick: () -> Unit,
+    onDragStart: (SyntheticDragEvent) -> Unit,
+    onDragOver: (SyntheticDragEvent) -> Unit,
+    onDrop: (SyntheticDragEvent) -> Unit,
     onEditClick: () -> Unit,
     onSelectClick: (Boolean) -> Unit,
-    onDeleteClick: () -> Unit
+    onDeleteClick: () -> Unit,
+    onRestoreClick: () -> Unit
 ) {
     var entered by remember { mutableStateOf(false) }
+
+    var restoreEntered by remember { mutableStateOf(false) }
 
     Card(
         cardId = uuid,
@@ -32,7 +41,10 @@ fun FolderCardElement(
             width(size.px)
             height(size.px)
         },
-        onEnter = { entered = it }
+        onEnter = { entered = it },
+        onDragStart = onDragStart,
+        onDragOver = onDragOver,
+        onDrop = onDrop,
     ) {
         Div(
             attrs = {
@@ -42,6 +54,7 @@ fun FolderCardElement(
                     height(size.px)
                     left(0.px)
                     top(0.px)
+                    property("pointer-events", "none")
                 }
             }
         ) {
@@ -63,6 +76,7 @@ fun FolderCardElement(
                         width(size.px)
                         left(0.px)
                         top(0.px)
+                        property("pointer-events", "none")
                     }
                 }
             ) {
@@ -74,6 +88,45 @@ fun FolderCardElement(
                     onSelectClick = onSelectClick,
                     size = size
                 )
+            }
+            if (parent == Constants.TRASH) {
+                Div(
+                    attrs = {
+                        style {
+                            position(Position.Absolute)
+                            width(size.px)
+                            height(size.px)
+                            left(0.px)
+                            top(0.px)
+                            property("pointer-events", "none")
+                            display(DisplayStyle.Flex)
+                            justifyContent(JustifyContent.Center)
+                            alignItems(AlignItems.Center)
+                        }
+                    }
+                ) {
+                    Div(attrs = {
+                        style {
+                            width(50.px)
+                            height(50.px)
+                            borderRadius(50.percent)
+                            display(DisplayStyle.Flex)
+                            justifyContent(JustifyContent.Center)
+                            alignItems(AlignItems.Center)
+                            cursor("pointer")
+                            property("box-shadow", "0 4px 12px rgba(0,0,0,0.2)")
+                            backgroundColor(if (restoreEntered) rgb(41, 182, 246) else rgb(230, 230, 230))
+                            padding(4.px)
+                            property("object-fit", "contain")
+                            property("pointer-events", "auto")
+                        }
+                        onClick { onRestoreClick() }
+                        onMouseEnter { restoreEntered = true }
+                        onMouseLeave { restoreEntered = false }
+                    }) {
+                        Img("./refresh.svg")
+                    }
+                }
             }
         }
     }
@@ -98,11 +151,15 @@ fun CardIconsContent(
             flexDirection(FlexDirection.Row)
             justifyContent(JustifyContent.SpaceBetween)
             margin(8.px)
+            property("pointer-events", "none")
         } }
     ) {
-        if (selected || entered){
+        if (selected || entered) {
             Div(attrs = {
-                style { iconButtonStyle(selectEntered, selected) }
+                style {
+                    iconButtonStyle(selectEntered, selected)
+                    property("pointer-events", "auto")
+                }
                 onClick { onSelectClick(!selected) }
                 onMouseEnter { selectEntered = true }
                 onMouseLeave { selectEntered = false }
@@ -115,6 +172,7 @@ fun CardIconsContent(
                 display(DisplayStyle.Flex)
                 flexDirection(FlexDirection.Row)
                 justifyContent(JustifyContent.FlexEnd)
+                property("pointer-events", "none")
             } }
         ) {
             if (entered && size >= 150) {
@@ -122,6 +180,7 @@ fun CardIconsContent(
                     style {
                         iconButtonStyle(editEntered, false)
                         marginRight(8.px)
+                        property("pointer-events", "auto")
                     }
                     onClick { onEditClick() }
                     onMouseEnter { editEntered = true }
@@ -132,7 +191,10 @@ fun CardIconsContent(
             }
             if (entered) {
                 Div(attrs = {
-                    style { iconButtonStyle(closeEntered, false) }
+                    style {
+                        iconButtonStyle(closeEntered, false)
+                        property("pointer-events", "auto")
+                    }
                     onClick { onDeleteClick() }
                     onMouseEnter { closeEntered = true }
                     onMouseLeave { closeEntered = false }
@@ -166,6 +228,7 @@ fun CardBaseContent(
                 width(contentWidth.px)
                 height((size - 16).px)
                 margin(8.px)
+                property("pointer-events", "auto")
             }
             onClick { onClick() }
         }
@@ -179,6 +242,7 @@ fun CardBaseContent(
                     backgroundColor(Color.transparent)
                     justifyContent(JustifyContent.Center)
                     alignItems(AlignItems.Center)
+                    property("pointer-events", "none")
                 }
             }
         ) {
@@ -186,6 +250,7 @@ fun CardBaseContent(
                 style {
                     width(contentWidth.px)
                     height(imageHeight.px)
+                    property("pointer-events", "none")
                     if (image == "./folder.svg")
                         property("object-fit", "contain")
                     else property("object-fit", "scale-down")
@@ -202,6 +267,7 @@ fun CardBaseContent(
                     backgroundColor(Color.transparent)
                     justifyContent(JustifyContent.Center)
                     alignItems(AlignItems.Center)
+                    property("pointer-events", "none")
                 }
             }
         ) {
@@ -227,6 +293,7 @@ fun CardBaseContent(
                         property("text-overflow", "ellipsis")
                         overflow("hidden")
                         cursor("default")
+                        property("pointer-events", "none")
                     }
                 }
             ) {
@@ -248,6 +315,7 @@ fun CardBaseContent(
                         whiteSpace("nowrap")
                         overflow("hidden")
                         cursor("default")
+                        property("pointer-events", "none")
                     }
                 }
             ) {
@@ -267,6 +335,7 @@ fun CardBaseContent(
                         backgroundColor(Color.transparent)
                         fontSize(0.9.em)
                         cursor("default")
+                        property("pointer-events", "none")
                     }
                 }
             ) {
@@ -276,11 +345,15 @@ fun CardBaseContent(
     }
 }
 
+@OptIn(ExperimentalWasmJsInterop::class)
 @Composable
 fun Card(
     cardId: String,
     modifier: StyleScope.() -> Unit = {},
     onEnter: (Boolean) -> Unit = { _ -> },
+    onDragStart: (SyntheticDragEvent) -> Unit,
+    onDragOver: (SyntheticDragEvent) -> Unit,
+    onDrop: (SyntheticDragEvent) -> Unit,
     content: @Composable () -> Unit
 ) {
     var entered by remember { mutableStateOf(false) }
@@ -288,16 +361,21 @@ fun Card(
     Div(
         attrs = {
             id(cardId)
+            draggable(Draggable.True)
             style {
                 position(Position.Relative)
                 borderRadius(12.px)
                 property("box-shadow", "0 4px 12px rgba(0,0,0,0.2)")
                 backgroundColor(if (entered) rgba(60, 60, 60, 0.6) else rgba(45, 45, 45, 0.6))
                 property("user-select", "none")
+                property("pointer-events", "auto")
                 modifier()
             }
             onMouseEnter { entered = true; onEnter(entered) }
             onMouseLeave { entered = false; onEnter(entered) }
+            onDragStart { onDragStart(it) }
+            onDragOver { onDragOver(it) }
+            onDrop { onDrop(it) }
         }
     ) {
         content()
@@ -323,9 +401,7 @@ fun StyleScope.iconButtonStyle(entered: Boolean, selected: Boolean): StyleScope 
 fun Int.calculateNameHeight(type: String): Int {
     val height =  if (type == Constants.FOLDER) {
         if (this < 67) this * 1.0 else this * 0.75
-    } else {
-        this * 0.5
-    }
+    } else this * 0.5
     return height.roundToInt()
 }
 

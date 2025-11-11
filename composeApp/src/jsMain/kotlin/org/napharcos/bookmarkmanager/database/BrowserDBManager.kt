@@ -147,6 +147,15 @@ class BrowserDBManager(): DatabaseRepository {
         }
     }
 
+    override suspend fun deleteBookmark(scope: CoroutineScope, uuid: String) {
+        val database = getDatabase(scope).await()
+
+        database.writeTransaction(TABLE_NAME) {
+            objectStore(TABLE_NAME).delete(Key(uuid))
+        }
+    }
+
+
     override suspend fun getBookmarkByImage(scope: CoroutineScope, imageId: String): Bookmarks? {
         val database = getDatabase(scope).await()
 

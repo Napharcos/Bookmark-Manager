@@ -45,6 +45,7 @@ import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Text
+import org.napharcos.bookmarkmanager.data.Constants
 import org.napharcos.bookmarkmanager.data.Values
 import org.napharcos.bookmarkmanager.getString
 import org.napharcos.bookmarkmanager.options.OptionsViewModel
@@ -82,7 +83,7 @@ fun TopbarContent(
             Space()
             Space()
             Space()
-            RightElements(viewModel)
+            RightElements(viewModel, uiState)
         }
     }
     FolderPath(uiState, viewModel)
@@ -166,7 +167,10 @@ fun BetweenFolderPathElemens() {
 }
 
 @Composable
-fun RightElements(viewModel: OptionsViewModel) {
+fun RightElements(
+    viewModel: OptionsViewModel,
+    uiState: UiState
+) {
     Div(
         attrs = {
             style {
@@ -180,7 +184,13 @@ fun RightElements(viewModel: OptionsViewModel) {
         ElementButton(getString(Values.CHANGE_BACKGROUND)) { viewModel.updateShowingChangeBackground(true) }
         ElementButton(getString(Values.IMPORT_BOOKMARKS)) { viewModel.updateShowingImportDialog(true) }
         ElementButton("Könyjelzők exportálása") { viewModel.deleteDB() }
-        ElementButton(getString(Values.ADD_NEW_ELEMENT)) { viewModel.updateShowingNewElement(true) }
+        ElementButton(getString(
+            if (uiState.selectedFolder != Constants.TRASH) Values.ADD_NEW_ELEMENT else Values.CLEAR_TRASH_BUTTON
+        )) {
+            if (uiState.selectedFolder != Constants.TRASH)
+                viewModel.updateShowingNewElement(true)
+            else viewModel.updateShowingClearTrash(true)
+        }
     }
 }
 

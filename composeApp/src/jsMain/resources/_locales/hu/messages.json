@@ -88,5 +88,23 @@
   },
   "edit_element": {
     "message": "Elem módosítása"
+  },
+  "move_trash_title": {
+    "message": "Elemek törlése"
+  },
+  "move_trash_text": {
+    "message": "Biztosan belemozgatod a kiválasztott $1 elemet a kukába?"
+  },
+  "delete_title": {
+    "message": "Végleges törlés"
+  },
+  "delete_text": {
+    "message": "Biztos benne, hogy véglegesen törli a kiválasztott $1 elemet?"
+  },
+  "clear_trash": {
+    "message": "Biztos benne, hogy véglegesen törli a kuka teljes tartalmát?"
+  },
+  "clear_trash_button": {
+    "message": "Kuka ürítése"
   }
 }

@@ -1,49 +1,8 @@
 package org.napharcos.bookmarkmanager.options.ui
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import org.jetbrains.compose.web.attributes.disabled
-import org.jetbrains.compose.web.css.AlignItems
-import org.jetbrains.compose.web.css.Color
-import org.jetbrains.compose.web.css.DisplayStyle
-import org.jetbrains.compose.web.css.FlexDirection
-import org.jetbrains.compose.web.css.JustifyContent
-import org.jetbrains.compose.web.css.LineStyle
-import org.jetbrains.compose.web.css.Position
-import org.jetbrains.compose.web.css.StyleScope
-import org.jetbrains.compose.web.css.alignItems
-import org.jetbrains.compose.web.css.backgroundColor
-import org.jetbrains.compose.web.css.border
-import org.jetbrains.compose.web.css.borderRadius
-import org.jetbrains.compose.web.css.color
-import org.jetbrains.compose.web.css.cursor
-import org.jetbrains.compose.web.css.display
-import org.jetbrains.compose.web.css.em
-import org.jetbrains.compose.web.css.flexDirection
-import org.jetbrains.compose.web.css.fontSize
-import org.jetbrains.compose.web.css.height
-import org.jetbrains.compose.web.css.justifyContent
-import org.jetbrains.compose.web.css.left
-import org.jetbrains.compose.web.css.marginLeft
-import org.jetbrains.compose.web.css.marginRight
-import org.jetbrains.compose.web.css.marginTop
-import org.jetbrains.compose.web.css.maxHeight
-import org.jetbrains.compose.web.css.minHeight
-import org.jetbrains.compose.web.css.minWidth
-import org.jetbrains.compose.web.css.overflow
-import org.jetbrains.compose.web.css.padding
-import org.jetbrains.compose.web.css.position
-import org.jetbrains.compose.web.css.px
-import org.jetbrains.compose.web.css.rgb
-import org.jetbrains.compose.web.css.rgba
-import org.jetbrains.compose.web.css.textAlign
-import org.jetbrains.compose.web.css.top
-import org.jetbrains.compose.web.css.vh
-import org.jetbrains.compose.web.css.vw
-import org.jetbrains.compose.web.css.width
+import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H3
@@ -54,8 +13,8 @@ import org.napharcos.bookmarkmanager.getString
 
 @Composable
 fun ConfirmDialog(
-    title: String = "Cím",
-    text: String = "Teszt szöveg.",
+    title: String,
+    text: String,
     onClose: () -> Unit,
     onConfirm: () -> Unit
 ) {

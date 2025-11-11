@@ -2,21 +2,7 @@ package org.napharcos.bookmarkmanager.options.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import org.jetbrains.compose.web.css.Color
-import org.jetbrains.compose.web.css.backgroundColor
-import org.jetbrains.compose.web.css.cursor
-import org.jetbrains.compose.web.css.height
-import org.jetbrains.compose.web.css.marginBottom
-import org.jetbrains.compose.web.css.maxWidth
-import org.jetbrains.compose.web.css.minWidth
-import org.jetbrains.compose.web.css.paddingBottom
-import org.jetbrains.compose.web.css.paddingLeft
-import org.jetbrains.compose.web.css.paddingRight
-import org.jetbrains.compose.web.css.paddingTop
-import org.jetbrains.compose.web.css.percent
-import org.jetbrains.compose.web.css.px
-import org.jetbrains.compose.web.css.rgba
-import org.jetbrains.compose.web.css.width
+import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H2
 import org.jetbrains.compose.web.dom.Text
@@ -57,6 +43,12 @@ fun NavRail(
                     cursor("pointer")
                 }
                 onClick { viewModel.onNavElementClick(null, "") }
+                onDragOver { it.preventDefault() }
+                onDrop {
+                    it.preventDefault()
+                    val draggedId = it.dataTransfer?.getData("uuid") ?: return@onDrop
+                    viewModel.moveElementToFolder(draggedId, "")
+                }
             }
         ) {
             Text(title)

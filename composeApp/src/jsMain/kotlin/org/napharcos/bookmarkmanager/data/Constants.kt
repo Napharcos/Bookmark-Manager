@@ -10,4 +10,5 @@ object Constants {
     const val TRUE = "true"
     const val FALSE = "false"
     const val TRASH = "trash"
+    const val FAKE = "fake"
 }
