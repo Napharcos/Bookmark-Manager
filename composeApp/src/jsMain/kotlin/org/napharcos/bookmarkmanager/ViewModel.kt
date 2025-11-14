@@ -1,4 +1,4 @@
-package org.napharcos.bookmarkmanager.options
+package org.napharcos.bookmarkmanager
 
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -9,9 +9,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.napharcos.bookmarkmanager.*
 import org.napharcos.bookmarkmanager.container.Container
 import org.napharcos.bookmarkmanager.data.Constants
+import org.napharcos.bookmarkmanager.data.Values
+import org.napharcos.bookmarkmanager.popup.PageInfo
+import org.napharcos.bookmarkmanager.popup.onPopupOpen
+import org.napharcos.bookmarkmanager.popup.toPageData
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.get
 import org.w3c.dom.set
@@ -21,9 +24,9 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class OptionsViewModel(private val container: Container) {
+class ViewModel(private val container: Container, private val popup: Boolean) {
 
-    val importManager = ImportManager(container.browserDatabase, container.serverDatabase)
+    val importManager = ImportManager(container.browserDatabase)
 
     private val _uiState = MutableStateFlow(UiState())
     val uiState = _uiState.asStateFlow()
@@ -33,13 +36,15 @@ class OptionsViewModel(private val container: Container) {
     }
 
     fun initUIState() {
-        _uiState.update {
-            it.copy(
-                background = window.localStorage[Constants.BACKGROUND] ?: "",
-                darkening = window.localStorage[Constants.DARKENING] != Constants.FALSE,
-                textColor = window.localStorage[Constants.TEXT_COLOR]?.toInt() ?: it.textColor,
-                cardSize = window.localStorage[Constants.CARD_SIZE]?.toInt() ?: it.cardSize
-            )
+        if (!popup) {
+            _uiState.update {
+                it.copy(
+                    background = window.localStorage[Constants.BACKGROUND] ?: "",
+                    darkening = window.localStorage[Constants.DARKENING] != Constants.FALSE,
+                    textColor = window.localStorage[Constants.TEXT_COLOR]?.toInt() ?: it.textColor,
+                    cardSize = window.localStorage[Constants.CARD_SIZE]?.toInt() ?: it.cardSize
+                )
+            }
         }
 
         AppScope.scope.launch {
@@ -51,17 +56,234 @@ class OptionsViewModel(private val container: Container) {
                 newFolders.addAll(container.browserDatabase.getSpecificFolders(this, it.uuid))
             }
 
+            val lastOpenFolder = if (popup) "" else window.localStorage[Constants.LAST_OPEN_FOLDER] ?: ""
+
+            val folders = getFolders(this, lastOpenFolder)
+
+            val openFolders = openParents(this, lastOpenFolder).distinct()
+
             _uiState.update {
+                console.log(openFolders.size)
                 it.copy(
-                    openFolders = listOf(""),
-                    selectedFolder = "",
-                    folders = newFolders,
-                    folderContent = container.browserDatabase.getChilds(this, "").createImageIfNotExist().sortedBy { c -> c.index },
+                    openFolders = openFolders,
+                    selectedFolder = lastOpenFolder,
+                    folders = if (lastOpenFolder == "") newFolders else (newFolders + folders).distinctBy { f -> f.uuid },
+                    folderContent = if (popup)
+                        emptyList()
+                    else container.browserDatabase.getChilds(this, lastOpenFolder).createImageIfNotExist()
+                        .sortedBy { c -> c.index },
                     selectedElements = emptyList()
                 )
             }
         }
     }
+
+    @OptIn(ExperimentalUuidApi::class)
+    fun createNewPopupFolder(parent: String) {
+        AppScope.scope.launch {
+            val uuid = Uuid.random().toHexString()
+
+            val newBookmark = Bookmark(
+                uuid = uuid,
+                parentId = parent,
+                name = getString(Values.NEW_FOLDER),
+                type = Constants.FOLDER,
+                index = getNextIndex(this, parent),
+                imageId = "",
+                image = "./folder.svg"
+            )
+
+            container.browserDatabase.addBookmark(newBookmark)
+
+            if (!uiState.value.openFolders.contains(parent))
+                onNavElementFoldClick(parent)
+
+            _uiState.update {
+                it.copy(
+                    folders = (it.folders + newBookmark).distinctBy { f -> f.uuid },
+                    selectedFolder = uuid,
+                    newFolder = uuid
+                )
+            }
+        }
+    }
+
+    fun onPopupEditConfirm(bookmark: Bookmarks, name: String) {
+        AppScope.scope.launch {
+            val updatedBookmark = bookmark.copy(name = name)
+
+            container.browserDatabase.addBookmark(updatedBookmark, true)
+
+            _uiState.update {
+                it.copy(
+                    folders = (listOf(updatedBookmark) + it.folders).distinctBy { f -> f.uuid },
+                    selectedFolder = bookmark.uuid,
+                    newFolder = null
+                )
+            }
+        }
+    }
+
+    fun onPopupTrashClick() {
+        AppScope.scope.launch {
+            val pageData = uiState.value.pageData
+            val bookmarkData = pageData?.url?.let { container.browserDatabase.getBookmarkByUrl(this, it) }
+
+            bookmarkData?.let { container.browserDatabase.deleteBookmark(this, it.uuid) }
+
+            chrome.tabs.query(js("{active: true, currentWindow: true}")) { tabs ->
+                val tab = tabs[0] ?: return@query
+                val tabId = tab.id as Int
+
+                updateIcon(tabId, false)
+            }
+            window.close()
+        }
+    }
+
+    @OptIn(ExperimentalUuidApi::class)
+    fun onPopupOkClick(image: String) {
+        AppScope.scope.launch {
+            val parent = uiState.value.selectedFolder
+            val pageData = uiState.value.pageData
+            val bookmarkData = pageData?.url?.let { container.browserDatabase.getBookmarkByUrl(this, it) }
+
+            if (image != bookmarkData?.image || parent != bookmarkData.parentId) {
+                val bookmark = bookmarkData?.copy(
+                    parentId = parent,
+                    imageId = if (image != bookmarkData.image) Uuid.random().toHexString() else bookmarkData.imageId,
+                    image = image
+                ) ?: Bookmark(
+                    parentId =  parent,
+                    name = pageData?.title ?: "",
+                    type = Constants.URL,
+                    index = getNextIndex(this, parent),
+                    imageId = Uuid.random().toHexString(),
+                    image = image,
+                    url = pageData?.url ?: "",
+                )
+
+                container.browserDatabase.addBookmark(bookmark, true)
+
+                window.localStorage[Constants.LAST_FOLDER] = parent
+            }
+            chrome.tabs.query(js("{active: true, currentWindow: true}")) { tabs ->
+                val tab = tabs[0] ?: return@query
+                val tabId = tab.id as Int
+
+                updateIcon(tabId, true)
+            }
+            window.close()
+        }
+    }
+
+    fun updateIcon(tabId: Int, isBookmarked: Boolean) {
+        val iconPaths = js("{}")
+        iconPaths["16"] = if (isBookmarked) "icons/bookmark_16.png" else "icons/bookmark_border_16.png"
+        iconPaths["32"] = if (isBookmarked) "icons/bookmark_32.png" else "icons/bookmark_border_32.png"
+        iconPaths["48"] = if (isBookmarked) "icons/bookmark_48.png" else "icons/bookmark_border_48.png"
+        iconPaths["128"] = if (isBookmarked) "icons/bookmark_128.png" else "icons/bookmark_border_128.png"
+
+        val details = js("{}")
+        details["path"] = iconPaths
+        details["tabId"] = tabId
+
+        chrome.action.setIcon(details)
+    }
+
+    fun getPageData() {
+        val options = js("{}").unsafeCast<CaptureOptions>()
+        options.format = "png"
+
+        chrome.tabs.captureVisibleTab(null, options) { screenShot ->
+            onPopupOpen { msg ->
+                val message = msg.unsafeCast<dynamic>()
+
+                if (message.type == "PAGE_INFO") {
+                    val payload = message.payload.unsafeCast<dynamic>()
+                    val url = payload.fullUrl as? String ?: ""
+
+                    AppScope.scope.launch {
+                        val bookmark = container.browserDatabase.getBookmarkByUrl(this, url)
+
+                        val info = PageInfo(
+                            fullUrl = url,
+                            baseDomain = payload.baseDomain as? String ?: "",
+                            title = payload.title as? String ?: "",
+                            favicons = (payload.favicons as? Array<dynamic>)?.mapNotNull { it as? String }
+                                ?.toTypedArray()
+                                ?: emptyArray(),
+                            metaImages = (payload.metaImages as? Array<dynamic>)?.mapNotNull { it as? String }
+                                ?.toTypedArray() ?: emptyArray(),
+                            pageImages = (payload.pageImages as? Array<dynamic>)?.mapNotNull { it as? String }
+                                ?.toTypedArray() ?: emptyArray()
+                        )
+
+                        val parentId = bookmark?.parentId ?: window.localStorage[Constants.LAST_FOLDER]
+
+                        val folders = getFolders(this, parentId ?: "")
+
+                        val openFolders = (listOf(parentId) + (parentId?.let { openParents(this, it) } ?: emptyList())).mapNotNull { it }
+
+                        _uiState.update {
+                            it.copy(
+                                pageData = info.toPageData(
+                                    screenShot = screenShot,
+                                    recoveredImage = bookmark?.image ?: "",
+                                    title = bookmark?.name ?: ""
+                                ),
+                                selectedFolder = parentId ?: "",
+                                folders = (it.folders + folders).distinctBy { f -> f.uuid },
+                                openFolders = (it.openFolders + openFolders).distinct()
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    suspend fun getFolders(scope: CoroutineScope, parentId: String): List<Bookmarks> {
+        val result = mutableListOf<Bookmarks>()
+
+        var currentId: String? = parentId
+
+        while (!currentId.isNullOrEmpty()) {
+            val parent = container.browserDatabase.getBookmark(scope, currentId)
+            if (parent != null) {
+                result.add(parent)
+
+                val children = container.browserDatabase.getSpecificFolders(scope, parent.uuid)
+                result.addAll(children)
+
+                for (child in children) {
+                    val childs = container.browserDatabase.getSpecificFolders(scope, child.uuid)
+
+                    result.addAll(childs)
+                }
+
+                currentId = parent.parentId
+            } else {
+                currentId = null
+            }
+        }
+
+        return result.distinctBy { it.uuid }
+    }
+
+    suspend fun openParents(scope: CoroutineScope, parentId: String): List<String> {
+        val result = mutableListOf<String>()
+        var currentId: String? = parentId
+
+        while (!currentId.isNullOrEmpty()) {
+            val bookmark = container.browserDatabase.getBookmark(scope, currentId) ?: break
+            result.add(currentId)
+            currentId = bookmark.parentId
+        }
+
+        return result
+    }
+
 
     fun updateShowingClearTrash(showing: Boolean) {
         _uiState.update {
@@ -126,10 +348,8 @@ class OptionsViewModel(private val container: Container) {
     fun clearTrash() {
         AppScope.scope.launch {
             val browserTrashElements = container.browserDatabase.getChilds(this, Constants.TRASH)
-            val serverTrashElements = container.serverDatabase?.getChilds(this, Constants.TRASH)
 
-            val allElements = (browserTrashElements.map { it.uuid } + (serverTrashElements?.map { it.uuid } ?: emptyList()))
-                .distinct()
+            val allElements = browserTrashElements.map { it.uuid }.distinct()
 
             allElements.forEach {
                 deleteElementsRecursive(this, it, mutableSetOf())
@@ -155,13 +375,10 @@ class OptionsViewModel(private val container: Container) {
         if (!visited.add(element)) return
 
         val browserChilds = container.browserDatabase.getChilds(scope, element)
-        val serverChilds = container.serverDatabase?.getChilds(scope, element)
 
         container.browserDatabase.deleteBookmark(scope, element)
-        container.serverDatabase?.deleteBookmark(scope, element)
 
-        val allChilds = (browserChilds.map { it.uuid } + (serverChilds?.map { it.uuid } ?: emptyList()))
-            .distinct()
+        val allChilds = browserChilds.map { it.uuid }.distinct()
 
         allChilds.forEach { child ->
             deleteElementsRecursive(scope, child, visited)
@@ -184,7 +401,6 @@ class OptionsViewModel(private val container: Container) {
             )
 
             container.browserDatabase.addBookmark(newBookmark)
-            container.serverDatabase?.addBookmark(newBookmark)
             reloadData()
             updateShowingNewElement(false)
         }
@@ -201,7 +417,6 @@ class OptionsViewModel(private val container: Container) {
             )
 
             container.browserDatabase.addBookmark(newBookmark, true)
-            container.serverDatabase?.addBookmark(newBookmark, true)
             reloadData()
             updateEditElement(null)
         }
@@ -209,12 +424,8 @@ class OptionsViewModel(private val container: Container) {
 
     suspend fun getNextIndex(scope: CoroutineScope, parentId: String): Int {
         val browserChilds = container.browserDatabase.getChilds(scope, parentId)
-        val serverChilds = container.serverDatabase?.getChilds(scope, parentId)
 
-        return maxOf(
-            browserChilds.maxByOrNull { it.index }?.index ?: 0,
-            serverChilds?.maxByOrNull { it.index }?.index ?: 0
-        ) + 1
+        return (browserChilds.maxByOrNull { it.index }?.index ?: 0) + 1
     }
 
     fun reindexElements(element: String, target: String, before: Boolean) {
@@ -265,7 +476,6 @@ class OptionsViewModel(private val container: Container) {
                 }
 
                 container.browserDatabase.addBookmark(newBookmark, override = true)
-                container.serverDatabase?.addBookmark(newBookmark, true)
 
                 nextIndex++
             }
@@ -301,12 +511,10 @@ class OptionsViewModel(private val container: Container) {
         AppScope.scope.launch {
             val newFolders = mutableListOf<Bookmarks>()
 
-            uiState.value.openFolders.forEach {
+            (uiState.value.openFolders + listOf("")).distinct().forEach {
                 val subfolders = container.browserDatabase.getSpecificFolders(this, it)
-                if (it.isEmpty()) {
-                    subfolders.forEach { s ->
-                        newFolders.addAll(container.browserDatabase.getSpecificFolders(this, s.uuid))
-                    }
+                subfolders.forEach { s ->
+                    newFolders.addAll(container.browserDatabase.getSpecificFolders(this, s.uuid))
                 }
                 newFolders.addAll(subfolders)
             }
@@ -314,7 +522,10 @@ class OptionsViewModel(private val container: Container) {
             _uiState.update {
                 it.copy(
                     folders = newFolders.distinctBy { f -> f.uuid },
-                    folderContent = container.browserDatabase.getChilds(this, it.selectedFolder).createImageIfNotExist().sortedBy { c -> c.index },
+                    folderContent = if (popup)
+                        emptyList()
+                    else container.browserDatabase.getChilds(this, it.selectedFolder)
+                        .createImageIfNotExist().sortedBy { c -> c.index },
                     selectedElements = emptyList()
                 )
             }
@@ -356,16 +567,27 @@ class OptionsViewModel(private val container: Container) {
     fun onNavElementClick(bookmark: Bookmarks?, uuid: String) {
         if (bookmark != null && bookmark.type == Constants.URL)
             window.open(bookmark.url, "_blank")
-        else
+        else {
             AppScope.scope.launch {
+                val isOpen = uiState.value.openFolders.contains(uuid)
+
+                if (!isOpen)
+                    container.browserDatabase.getBookmark(this, uuid)
+                        ?.let { onNavElementFoldClick(it.parentId) }
+
                 _uiState.update {
                     it.copy(
                         selectedFolder = uuid,
-                        folderContent = container.browserDatabase.getChilds(this, uuid).createImageIfNotExist().sortedBy { c -> c.index },
+                        folderContent = if (popup)
+                            emptyList()
+                        else container.browserDatabase.getChilds(this, uuid).createImageIfNotExist()
+                            .sortedBy { c -> c.index },
                         selectedElements = emptyList()
                     )
                 }
+                window.localStorage[Constants.LAST_OPEN_FOLDER] = uuid
             }
+        }
     }
 
     fun onNavElementFoldClick(uuid: String) {
@@ -382,8 +604,12 @@ class OptionsViewModel(private val container: Container) {
 
             _uiState.update {
                 it.copy(
-                    openFolders = if (uuid.isNotEmpty()) { if (isOpen) it.openFolders - uuid else it.openFolders + uuid } else it.openFolders,
-                    folders = if (uuid.isNotEmpty()) { if (isOpen) it.folders else (it.folders + newFolders).distinctBy { f -> f.uuid } } else it.folders
+                    openFolders = if (uuid.isNotEmpty()) {
+                        if (isOpen) it.openFolders - uuid else it.openFolders + uuid
+                    } else it.openFolders,
+                    folders = if (uuid.isNotEmpty()) {
+                        if (isOpen) it.folders else (it.folders + newFolders).distinctBy { f -> f.uuid }
+                    } else it.folders
                 )
             }
         }

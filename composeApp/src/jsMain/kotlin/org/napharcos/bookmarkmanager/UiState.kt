@@ -1,6 +1,6 @@
-package org.napharcos.bookmarkmanager.options
+package org.napharcos.bookmarkmanager
 
-import org.napharcos.bookmarkmanager.Bookmarks
+import org.napharcos.bookmarkmanager.popup.PageData
 
 data class UiState(
     val background: String = "",
@@ -19,5 +19,7 @@ data class UiState(
     val trashElements: List<String> = emptyList(),
     val editElement: Bookmarks? = null,
     val selectedElements: List<String> = emptyList(),
-    val deleteElements: List<String> = emptyList()
+    val deleteElements: List<String> = emptyList(),
+    val pageData: PageData? = null,
+    val newFolder: String? = null
 )

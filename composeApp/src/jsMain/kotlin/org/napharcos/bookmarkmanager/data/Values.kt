@@ -36,4 +36,5 @@ object Values {
     const val DELETE_TEXT = "delete_text"
     const val CLEAR_TRASH = "clear_trash"
     const val CLEAR_TRASH_BUTTON = "clear_trash_button"
+    const val NEW_FOLDER = "new_folder"
 }

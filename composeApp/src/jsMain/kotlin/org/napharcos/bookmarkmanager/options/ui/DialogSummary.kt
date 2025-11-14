@@ -2,16 +2,16 @@ package org.napharcos.bookmarkmanager.options.ui
 
 import androidx.compose.runtime.Composable
 import org.napharcos.bookmarkmanager.ImportManager
+import org.napharcos.bookmarkmanager.UiState
+import org.napharcos.bookmarkmanager.ViewModel
 import org.napharcos.bookmarkmanager.data.Constants
 import org.napharcos.bookmarkmanager.data.Values
 import org.napharcos.bookmarkmanager.getString
-import org.napharcos.bookmarkmanager.options.OptionsViewModel
-import org.napharcos.bookmarkmanager.options.UiState
 
 @Composable
 fun DialogSummary(
     uiState: UiState,
-    viewModel: OptionsViewModel
+    viewModel: ViewModel
 ) {
     when {
         uiState.showingChangeBackgroundDialog ->

@@ -19,8 +19,7 @@ import kotlin.collections.component1
 import kotlin.collections.component2
 
 class ImportManager(
-    private val browserDBRepository: DatabaseRepository,
-    private val serverDBRepository: DatabaseRepository? = null
+    private val browserDBRepository: DatabaseRepository
 ) {
     companion object {
         const val BOOKMARK_FILE_PATHS= """
@@ -127,18 +126,13 @@ class ImportManager(
 
     private suspend fun List<BookmarkData>.addBookmarks(scope: CoroutineScope, parentId: String) {
         val browserRootChilds = browserDBRepository.getChilds(scope, parentId)
-        val serverRootChilds = serverDBRepository?.getChilds(scope, parentId)
 
-        var nextIndex = maxOf(
-            browserRootChilds.maxByOrNull { it.index }?.index ?: 0,
-            serverRootChilds?.maxByOrNull { it.index }?.index ?: 0
-        )
+        var nextIndex = browserRootChilds.maxByOrNull { it.index }?.index ?: 0
 
         for (it in this) {
             val browserBookmark = browserDBRepository.getBookmark(scope, it.guid)
-            val serverBookmark = serverDBRepository?.getBookmark(scope, it.guid)
 
-            if (browserBookmark == null && serverBookmark == null) {
+            if (browserBookmark == null) {
                 loadingText = getString(Values.LOADING_ADD_BOOKMARK, it.name)
 
                 val date = (if (it.date_modified.isNotEmpty() && it.date_modified != "0") it.date_modified else it.date_added).toLongOrNull()?.convertChromeTime() ?: 0L
@@ -160,11 +154,10 @@ class ImportManager(
                 )
 
                 browserDBRepository.addBookmark(newBookmark)
-                serverDBRepository?.addBookmark(newBookmark)
 
                 nextIndex++
-            } else if (browserBookmark == null || (serverDBRepository != null && serverBookmark == null)) {
-                // TODO: sync
+            } else {
+                // TODO
             }
 
             it.children.addBookmarks(scope, it.guid)
@@ -203,7 +196,6 @@ class ImportManager(
             loadingText = getString(Values.LOADING_UPDATE_BOOKMARK, bookmark.name)
 
             browserDBRepository.updateImage(scope, bookmark.uuid, "data:image/jpeg;base64,$image")
-            serverDBRepository?.updateImage(scope, bookmark.uuid, "data:image/jpeg;base64,$image")
         }
     }
 
@@ -243,7 +235,6 @@ class ImportManager(
                             isEscaped = true
                         } else if (c == '"') {
                             insideValue = false
-                            // Kulcs–érték kész, feldolgozzuk
                             saveData(this, key, value)
                             key = ""
                             value = ""
@@ -292,7 +283,6 @@ class ImportManager(
                     val base64 = reader.result as? String ?: ""
 
                     browserDBRepository.updateImage(this, bookmark.uuid, base64)
-                    serverDBRepository?.updateImage(this, bookmark.uuid, base64)
                 }
                 result.complete(Unit)
             }

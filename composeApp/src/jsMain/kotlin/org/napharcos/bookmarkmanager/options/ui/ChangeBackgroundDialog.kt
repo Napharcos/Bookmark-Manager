@@ -6,16 +6,16 @@ import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.*
 import org.napharcos.bookmarkmanager.AppScope
+import org.napharcos.bookmarkmanager.UiState
+import org.napharcos.bookmarkmanager.ViewModel
 import org.napharcos.bookmarkmanager.data.Values
 import org.napharcos.bookmarkmanager.dialogBackground
 import org.napharcos.bookmarkmanager.getString
-import org.napharcos.bookmarkmanager.options.OptionsViewModel
-import org.napharcos.bookmarkmanager.options.UiState
 
 @Composable
 fun ChangeBackgroundDialog(
     uiState: UiState,
-    viewModel: OptionsViewModel,
+    viewModel: ViewModel,
     onClose: () -> Unit,
     onConfirm: (String) -> Unit
 ) {

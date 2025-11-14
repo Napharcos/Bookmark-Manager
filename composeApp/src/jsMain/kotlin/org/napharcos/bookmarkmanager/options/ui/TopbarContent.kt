@@ -4,57 +4,21 @@ import androidx.compose.runtime.Composable
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.max
 import org.jetbrains.compose.web.attributes.min
-import org.jetbrains.compose.web.css.AlignItems
-import org.jetbrains.compose.web.css.Color
-import org.jetbrains.compose.web.css.DisplayStyle
-import org.jetbrains.compose.web.css.FlexDirection
-import org.jetbrains.compose.web.css.JustifyContent
-import org.jetbrains.compose.web.css.Position
-import org.jetbrains.compose.web.css.alignItems
-import org.jetbrains.compose.web.css.backgroundColor
-import org.jetbrains.compose.web.css.borderRadius
-import org.jetbrains.compose.web.css.bottom
-import org.jetbrains.compose.web.css.color
-import org.jetbrains.compose.web.css.cursor
-import org.jetbrains.compose.web.css.display
-import org.jetbrains.compose.web.css.em
-import org.jetbrains.compose.web.css.flexDirection
-import org.jetbrains.compose.web.css.flexGrow
-import org.jetbrains.compose.web.css.fontSize
-import org.jetbrains.compose.web.css.height
-import org.jetbrains.compose.web.css.justifyContent
-import org.jetbrains.compose.web.css.left
-import org.jetbrains.compose.web.css.margin
-import org.jetbrains.compose.web.css.marginLeft
-import org.jetbrains.compose.web.css.maxWidth
-import org.jetbrains.compose.web.css.overflow
-import org.jetbrains.compose.web.css.padding
-import org.jetbrains.compose.web.css.paddingLeft
-import org.jetbrains.compose.web.css.paddingRight
-import org.jetbrains.compose.web.css.paddingTop
-import org.jetbrains.compose.web.css.percent
-import org.jetbrains.compose.web.css.position
-import org.jetbrains.compose.web.css.px
-import org.jetbrains.compose.web.css.rgb
-import org.jetbrains.compose.web.css.textAlign
-import org.jetbrains.compose.web.css.textDecoration
-import org.jetbrains.compose.web.css.top
-import org.jetbrains.compose.web.css.whiteSpace
-import org.jetbrains.compose.web.css.width
+import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Text
+import org.napharcos.bookmarkmanager.UiState
+import org.napharcos.bookmarkmanager.ViewModel
 import org.napharcos.bookmarkmanager.data.Constants
 import org.napharcos.bookmarkmanager.data.Values
 import org.napharcos.bookmarkmanager.getString
-import org.napharcos.bookmarkmanager.options.OptionsViewModel
-import org.napharcos.bookmarkmanager.options.UiState
 
 @Composable
 fun TopbarContent(
     uiState: UiState,
-    viewModel: OptionsViewModel
+    viewModel: ViewModel
 ) {
     Div(
         attrs = {
@@ -92,7 +56,7 @@ fun TopbarContent(
 @Composable
 fun FolderPath(
     uiState: UiState,
-    viewModel: OptionsViewModel
+    viewModel: ViewModel
 ) {
     Div(
         attrs = {
@@ -168,7 +132,7 @@ fun BetweenFolderPathElemens() {
 
 @Composable
 fun RightElements(
-    viewModel: OptionsViewModel,
+    viewModel: ViewModel,
     uiState: UiState
 ) {
     Div(
@@ -227,7 +191,7 @@ fun Space() {
 @Composable
 fun LeftElementsContent(
     uiState: UiState,
-    viewModel: OptionsViewModel
+    viewModel: ViewModel
 ) {
     Div(
         attrs = {

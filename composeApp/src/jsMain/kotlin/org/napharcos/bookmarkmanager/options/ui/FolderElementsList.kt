@@ -7,10 +7,10 @@ import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Div
 import org.napharcos.bookmarkmanager.Bookmarks
 import org.napharcos.bookmarkmanager.DragZone
+import org.napharcos.bookmarkmanager.UiState
+import org.napharcos.bookmarkmanager.ViewModel
 import org.napharcos.bookmarkmanager.addPlaceholder
 import org.napharcos.bookmarkmanager.data.Constants
-import org.napharcos.bookmarkmanager.options.OptionsViewModel
-import org.napharcos.bookmarkmanager.options.UiState
 import org.napharcos.bookmarkmanager.options.topbarHeight
 import org.w3c.dom.HTMLElement
 import kotlin.math.abs
@@ -19,7 +19,7 @@ import kotlin.math.min
 
 @Composable
 fun FolderElementsList(
-    viewModel: OptionsViewModel,
+    viewModel: ViewModel,
     uiState: UiState,
     elements: List<Bookmarks>,
     itemsSize: Int,
@@ -52,6 +52,7 @@ fun FolderElementsList(
                 height((window.innerHeight - topbarHeight()).px)
                 width(100.percent)
                 overflowY("auto")
+                overflowX("hidden")
                 property("scrollbar-color", "#555 #3b3b3b")
                 display(DisplayStyle.Grid)
                 gridTemplateColumns("repeat(auto-fill, minmax(${itemsSize}px, 1fr))")

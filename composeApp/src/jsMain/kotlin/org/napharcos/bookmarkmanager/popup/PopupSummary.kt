@@ -1,49 +1,32 @@
 package org.napharcos.bookmarkmanager.popup
 
 import androidx.compose.runtime.*
+import kotlinx.dom.isElement
 import org.jetbrains.compose.web.attributes.ATarget
+import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.target
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.*
 import org.napharcos.bookmarkmanager.*
+import org.napharcos.bookmarkmanager.container.ContainerImpl
 import org.napharcos.bookmarkmanager.data.Values
+import org.w3c.dom.HTMLElement
+import org.w3c.dom.HTMLInputElement
 
 @Composable
 fun PopupSummary() {
-    val viewModel = remember { PopupViewModel() }
+    val container = remember { ContainerImpl() }
+    val viewModel = remember { ViewModel(container, true) }
+    val uiState by viewModel.uiState.collectAsState()
 
-    val title = remember { getString(Values.ADD_BOOKMARK) }
-    val open = remember { getString(Values.OPEN_OPTIONS) }
-
-    var pageData by remember { mutableStateOf<PageData?>(null) }
+    var imageIndex by remember { mutableStateOf(0) }
 
     LaunchedEffect(Unit) {
-        val options = js("{}").unsafeCast<CaptureOptions>()
-        options.format = "png"
+        viewModel.getPageData()
+    }
 
-        chrome.tabs.captureVisibleTab(null, options) { screenShot ->
-            onPopupOpen { msg ->
-                val message = msg.unsafeCast<dynamic>()
-
-                if (message.type == "PAGE_INFO") {
-                    val payload = message.payload.unsafeCast<dynamic>()
-
-                    val info = PageInfo(
-                        fullUrl = payload.fullUrl as? String ?: "",
-                        baseDomain = payload.baseDomain as? String ?: "",
-                        title = payload.title as? String ?: "",
-                        favicons = (payload.favicons as? Array<dynamic>)?.mapNotNull { it as? String }?.toTypedArray()
-                            ?: emptyArray(),
-                        metaImages = (payload.metaImages as? Array<dynamic>)?.mapNotNull { it as? String }
-                            ?.toTypedArray() ?: emptyArray(),
-                        pageImages = (payload.pageImages as? Array<dynamic>)?.mapNotNull { it as? String }
-                            ?.toTypedArray() ?: emptyArray()
-                    )
-
-                    pageData = info.toPageData(screenShot)
-                }
-            }
-        }
+    LaunchedEffect(uiState.pageData?.images?.size) {
+        imageIndex = 0
     }
 
     Div(
@@ -53,20 +36,28 @@ fun PopupSummary() {
             }
         }
     ) {
-        PopupTitle(title, open)
-        ImageView(pageData?.images ?: emptyList())
-        PageName(pageData?.title ?: "")
+        PopupTitle()
+        ImageView(
+            images = uiState.pageData?.images ?: emptyList(),
+            imageIndex = imageIndex,
+            changeImageIndex = { imageIndex = it },
+        )
+        PageName(uiState.pageData?.title ?: "")
         SplitLine(true)
-        BookmarkTree(viewModel)
+        BookmarkTree(uiState, viewModel)
         SplitLine()
-        BottomButtons {  }
+        BottomButtons(
+            remove = { viewModel.onPopupTrashClick() },
+            confirm = { viewModel.onPopupOkClick(uiState.pageData?.images[imageIndex] ?: "") }
+        )
     }
 }
 
 @Composable
-fun BookmarkTree(viewModel: PopupViewModel) {
-    var selectedElement by remember { mutableStateOf("") }
-
+fun BookmarkTree(
+    uiState: UiState,
+    viewModel: ViewModel
+) {
     Div(
         attrs = {
             style {
@@ -80,47 +71,45 @@ fun BookmarkTree(viewModel: PopupViewModel) {
         }
     ) {
         FoldersTree(
+            uiState = uiState,
             viewModel = viewModel,
-            list = viewModel.folders.map { it.value }.buildTree(),
-            openFolders = viewModel.openFolders,
+            list = uiState.folders.buildTree(),
+            openFolders = uiState.openFolders,
             depth = 0,
-            selected = selectedElement,
-            select = { selectedElement = it }
         )
     }
 }
 
 @Composable
 fun FoldersTree(
-    viewModel: PopupViewModel,
+    uiState: UiState,
+    viewModel: ViewModel,
     openFolders: List<String>,
     list: List<BookmarksTree>,
     depth: Int,
-    selected: String,
-    select: (String) -> Unit
 ) {
-    list.sortedBy { it.folder.index }.forEach {
+    val editable = list.firstOrNull { it.folder.uuid == uiState.newFolder }
+
+    list.sortedBy { it.folder.index }.moveLastToFirst(editable != null).forEach {
         val isOpen = it.folder.uuid in openFolders
 
         BookmarkTreeElement(
             folderName = folderNameBuilder(depth, it.folder.name, isOpen, it.children.isNotEmpty()),
-            selected = selected == it.folder.uuid,
-            onElementClick = {
-                select(it.folder.uuid)
-                if (isOpen) viewModel.closeFolder(it.folder.uuid)
-                else viewModel.openFolder(it.folder.uuid)
-            },
-            onNewFolderClick = {  }
+            selected = uiState.selectedFolder == it.folder.uuid,
+            onElementClick = { viewModel.onNavElementClick(it.folder, it.folder.uuid) },
+            onNewFolderClick = { viewModel.createNewPopupFolder(it.folder.uuid) },
+            onFoldClick = { viewModel.onNavElementFoldClick(it.folder.uuid) },
+            edit = uiState.newFolder == it.folder.uuid,
+            onEditConfirm = { name -> viewModel.onPopupEditConfirm(it.folder, name) }
         )
 
         if (isOpen) {
             FoldersTree(
+                uiState = uiState,
                 viewModel = viewModel,
                 openFolders = openFolders,
                 list = it.children,
                 depth = depth + 1,
-                selected = selected,
-                select = select
             )
         }
     }
@@ -131,37 +120,134 @@ fun BookmarkTreeElement(
     folderName: String,
     selected: Boolean,
     onElementClick: () -> Unit,
-    onNewFolderClick: () -> Unit
+    onNewFolderClick: () -> Unit,
+    onFoldClick: () -> Unit,
+    onEditConfirm: (String) -> Unit,
+    edit: Boolean
 ) {
     var onEnter by remember { mutableStateOf(false) }
+
+    val regex = listOf("\u23F7", "\u23F5").find { folderName.contains(it) }
+    val names = regex?.let { folderName.split(it) } ?: listOf(folderName)
+
+    var onFoldEnter by remember { mutableStateOf(false) }
+
+    var elementRef by remember { mutableStateOf<HTMLElement?>(null) }
+    var inputRef by remember { mutableStateOf<HTMLInputElement?>(null) }
+
+    var value by remember { mutableStateOf(folderName.trim()) }
+
+    LaunchedEffect(inputRef, Unit) {
+        if (edit)
+            inputRef?.focus()
+    }
+
+    LaunchedEffect(folderName) {
+        value = folderName
+    }
 
     Div(
         attrs = {
             style {
                 elementDiv()
-                backgroundColor(if (onEnter) Color.darkblue else if (selected) Color.midnightblue else Color.transparent)
+                backgroundColor(if (onEnter) rgba(0, 0, 139, 0.9) else if (selected) rgba(25, 25, 112, 0.9) else Color.transparent)
             }
             onMouseEnter { onEnter = true }
             onMouseLeave { onEnter = false }
         }
     ) {
-        Button(
+        Div(
             attrs = {
                 style {
-                    width(306.px)
-                    elementButton()
+                    display(DisplayStyle.Flex)
+                    flexDirection(FlexDirection.Row)
+                    justifyContent(JustifyContent.Start)
+                    height(30.px)
+                    backgroundColor(Color.transparent)
                 }
-                onClick { onElementClick() }
             }
         ) {
-            Text(folderName)
+            if (names.size > 1) {
+                Button(
+                    attrs = {
+                        ref {
+                            elementRef = it
+                            onDispose { elementRef = null }
+                        }
+                        style {
+                            elementButton()
+                            paddingRight(0.px)
+                            if (onFoldEnter) color(Color.cyan)
+                        }
+                        onClick { onFoldClick() }
+                        onMouseEnter {
+                            onFoldEnter = true
+                            onEnter = true
+                        }
+                        onMouseLeave {
+                            onFoldEnter = false
+                            onEnter = false
+                        }
+                    }
+                ) {
+                    Text(names[0] + regex)
+                }
+            }
+            if (!edit) {
+                Button(
+                    attrs = {
+                        style {
+                            width((300 - (elementRef?.offsetWidth ?: 0)).px)
+                            elementButton()
+                        }
+                        onClick { onElementClick() }
+                    }
+                ) {
+                    Text(if (names.size > 1) names[1] else " ${names[0]}")
+                }
+            } else {
+                Input(
+                    type = InputType.Text,
+                    attrs = {
+                        ref {
+                            inputRef = it
+                            onDispose { inputRef = null }
+                        }
+                        style {
+                            width((300 - 22 - (elementRef?.offsetWidth ?: 0)).px)
+                            height(18.px)
+                            marginTop(4.px)
+                            marginBottom(4.px)
+                            marginLeft(8.px)
+                            marginRight(8.px)
+                            padding(0.px)
+                            overflow("hidden")
+                            property("display", "-webkit-box")
+                            property("-webkit-box-orient", "vertical")
+                            property("-webkit-line-clamp", 1)
+                            property("text-overflow", "ellipsis")
+                            property("text-align", "left")
+                            whiteSpace("pre")
+                            fontFamily("Fira Code", "monospace")
+                            fontSize(1.1.em)
+                        }
+                        value(value)
+                        onInput { value = it.value }
+                        onKeyDown { event ->
+                            if (event.key == "Enter") {
+                                event.preventDefault()
+                                event.stopPropagation()
+                                onEditConfirm(value)
+                            }
+                        }
+                        onFocusOut { onEditConfirm(value) }
+                    }
+                )
+            }
         }
         Button(
             attrs = {
-                onClick {
-                    onNewFolderClick()
-                    onElementClick()
-                }
+                onClick { onNewFolderClick() }
                 style {
                     width(30.px)
                     height(30.px)
@@ -182,19 +268,15 @@ fun BookmarkTreeElement(
 
 @Composable
 fun ImageView(
-    images: List<String>
+    images: List<String>,
+    imageIndex: Int,
+    changeImageIndex: (Int) -> Unit
 ) {
-    var currentIndex by remember { mutableStateOf(0) }
-
-    LaunchedEffect(images.size) {
-        currentIndex = 0
-    }
-
     Div(
         attrs = {
             style {
                 display(DisplayStyle.Flex)
-                marginTop(8.px)
+                marginTop(6.px)
                 alignItems(AlignItems.Center)
                 justifyContent(JustifyContent.Center)
                 width(100.percent)
@@ -206,7 +288,7 @@ fun ImageView(
         Button(
             attrs = {
                 style { arrowButton() }
-                onClick { if (currentIndex != 0) currentIndex-- else currentIndex = images.size - 1 }
+                onClick { if (imageIndex != 0) changeImageIndex(imageIndex - 1) else changeImageIndex(images.size - 1) }
             }
         ) {
             Text("‹")
@@ -226,7 +308,7 @@ fun ImageView(
             }
         ) {
             if (images.isNotEmpty())
-                Img(src = images[currentIndex]) {
+                Img(src = images[imageIndex]) {
                     style {
                         maxWidth(100.percent)
                         maxHeight(100.percent)
@@ -239,7 +321,7 @@ fun ImageView(
         Button(
             attrs = {
                 style { arrowButton() }
-                onClick { if (currentIndex != images.size - 1) currentIndex++ else currentIndex = 0 }
+                onClick { if (imageIndex != images.size - 1) changeImageIndex(imageIndex + 1) else changeImageIndex(0) }
             }
         ) {
             Text("›")
@@ -248,7 +330,10 @@ fun ImageView(
 }
 
 @Composable
-fun BottomButtons(remove: () -> Unit) {
+fun BottomButtons(
+    remove: () -> Unit,
+    confirm: () -> Unit
+) {
     val okButtonText = remember { getString(Values.OK) }
     var onTrashEnter by remember { mutableStateOf(false) }
     var onOkEnter by remember { mutableStateOf(false) }
@@ -258,7 +343,7 @@ fun BottomButtons(remove: () -> Unit) {
             style {
                 property("display", "flex")
                 justifyContent(JustifyContent.SpaceBetween)
-                paddingBottom(4.px)
+                paddingBottom(3.px)
                 width(100.percent)
                 height(40.px)
                 backgroundColor(Color.transparent)
@@ -267,9 +352,9 @@ fun BottomButtons(remove: () -> Unit) {
     ) {
         Button(
             attrs = {
-                onClick {  }
+                onClick { remove() }
                 style {
-                    marginTop(4.px)
+                    marginTop(3.px)
                     marginLeft(8.px)
                     width(34.px)
                     height(34.px)
@@ -291,9 +376,9 @@ fun BottomButtons(remove: () -> Unit) {
         }
         Button(
             attrs = {
-                onClick {  }
+                onClick { confirm() }
                 style {
-                    marginTop(4.px)
+                    marginTop(3.px)
                     marginRight(8.px)
                     width(54.px)
                     height(34.px)
@@ -316,19 +401,18 @@ fun BottomButtons(remove: () -> Unit) {
 }
 
 @Composable
-fun PopupTitle(
-    title: String,
-    open: String
-) {
+fun PopupTitle() {
     Div {
         H2(
             attrs = {
                 style {
+                    marginTop(8.px)
+                    marginBottom(8.px)
                     paddingLeft(12.px)
                 }
             }
         ) {
-            Text(title)
+            Text(getString(Values.ADD_BOOKMARK))
         }
         A(
             href = "./options.html",
@@ -340,7 +424,7 @@ fun PopupTitle(
                 }
             }
         ) {
-            Text(open)
+            Text(getString(Values.OPEN_OPTIONS))
         }
     }
 }

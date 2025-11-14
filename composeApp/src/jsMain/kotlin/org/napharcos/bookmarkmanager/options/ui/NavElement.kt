@@ -5,9 +5,9 @@ import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
+import org.napharcos.bookmarkmanager.UiState
+import org.napharcos.bookmarkmanager.ViewModel
 import org.napharcos.bookmarkmanager.elementButton
-import org.napharcos.bookmarkmanager.options.OptionsViewModel
-import org.napharcos.bookmarkmanager.options.UiState
 import org.napharcos.bookmarkmanager.options.toTextColor
 
 @Composable
@@ -17,7 +17,7 @@ fun NavElement(
     selected: Boolean,
     onFoldClick: () -> Unit,
     onElementClick: () -> Unit,
-    viewModel: OptionsViewModel,
+    viewModel: ViewModel,
     uiState: UiState
 ) {
     var onEnter by remember { mutableStateOf(false) }
@@ -29,7 +29,7 @@ fun NavElement(
     Div(
         attrs = {
             style {
-                property("display", "flex")
+                display(DisplayStyle.Flex)
                 flexDirection(FlexDirection.Row)
                 justifyContent(JustifyContent.Start)
                 width(100.percent)

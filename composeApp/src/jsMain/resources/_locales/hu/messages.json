@@ -106,5 +106,8 @@
   },
   "clear_trash_button": {
     "message": "Kuka ürítése"
+  },
+  "new_folder": {
+    "message": "Új mappa"
   }
 }

@@ -6,24 +6,16 @@ import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Div
 import org.napharcos.bookmarkmanager.*
 import org.napharcos.bookmarkmanager.container.ContainerImpl
-import org.napharcos.bookmarkmanager.data.Constants
-import org.napharcos.bookmarkmanager.data.Values
-import org.napharcos.bookmarkmanager.options.ui.ChangeBackgroundDialog
-import org.napharcos.bookmarkmanager.options.ui.ConfirmDialog
 import org.napharcos.bookmarkmanager.options.ui.DialogSummary
-import org.napharcos.bookmarkmanager.options.ui.EditElementDialog
 import org.napharcos.bookmarkmanager.options.ui.FolderElementsList
-import org.napharcos.bookmarkmanager.options.ui.ImportDialog
-import org.napharcos.bookmarkmanager.options.ui.LoadingDialog
 import org.napharcos.bookmarkmanager.options.ui.NavRail
-import org.napharcos.bookmarkmanager.options.ui.NewElementDialog
 import org.napharcos.bookmarkmanager.options.ui.TopbarContent
 import kotlin.math.roundToInt
 
 @Composable
 fun OptionsSummary() {
     val container = remember { ContainerImpl() }
-    val viewModel = remember { OptionsViewModel(container) }
+    val viewModel = remember { ViewModel(container, false) }
     val uiState by viewModel.uiState.collectAsState()
 
     var windowHeight by remember { mutableStateOf(window.innerHeight) }
@@ -66,7 +58,7 @@ fun OptionsSummary() {
 
 @Composable
 fun MainPage(
-    viewModel: OptionsViewModel,
+    viewModel: ViewModel,
     uiState: UiState
 ) {
     Div(
@@ -92,7 +84,7 @@ fun MainPage(
 @Composable
 fun TopBar(
     uiState: UiState,
-    viewModel: OptionsViewModel
+    viewModel: ViewModel
 ) {
     Div(
         attrs = {

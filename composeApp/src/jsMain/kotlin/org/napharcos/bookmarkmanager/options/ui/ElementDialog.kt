@@ -1,32 +1,18 @@
 package org.napharcos.bookmarkmanager.options.ui
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.css.*
-import org.jetbrains.compose.web.dom.Button
-import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.H3
-import org.jetbrains.compose.web.dom.Input
-import org.jetbrains.compose.web.dom.Option
-import org.jetbrains.compose.web.dom.Select
-import org.jetbrains.compose.web.dom.Text
-import org.napharcos.bookmarkmanager.AppScope
-import org.napharcos.bookmarkmanager.Bookmarks
+import org.jetbrains.compose.web.dom.*
+import org.napharcos.bookmarkmanager.*
 import org.napharcos.bookmarkmanager.data.Constants
 import org.napharcos.bookmarkmanager.data.Values
-import org.napharcos.bookmarkmanager.dialogBackground
-import org.napharcos.bookmarkmanager.getString
-import org.napharcos.bookmarkmanager.options.OptionsViewModel
 
 @Composable
 fun NewElementDialog(
-    viewModel: OptionsViewModel,
+    viewModel: ViewModel,
     onCancel: () -> Unit,
     onConfirm: (String, String, String, String) -> Unit
 ) {
@@ -60,7 +46,7 @@ fun NewElementDialog(
 
 @Composable
 fun EditElementDialog(
-    viewModel: OptionsViewModel,
+    viewModel: ViewModel,
     bookmark: Bookmarks,
     onCancel: () -> Unit,
     onConfirm: (Bookmarks, String, String, String) -> Unit

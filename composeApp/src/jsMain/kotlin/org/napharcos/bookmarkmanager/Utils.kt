@@ -85,7 +85,7 @@ fun PageName(title: String) {
 
 fun StyleScope.elementDiv() {
     this.apply {
-        property("display", "flex")
+        display(DisplayStyle.Flex)
         justifyContent(JustifyContent.SpaceBetween)
         width(100.percent)
         height(30.px)
@@ -149,4 +149,10 @@ fun List<Bookmarks>.addPlaceholder(
     val insertPos = if (dragZone == DragZone.BEFORE) targetIndex else (targetIndex + 1).coerceAtMost(list.size)
     list.add(insertPos, placeholder)
     return if (dragZone != DragZone.INSIDE) list else this.filter { it.type != Constants.FAKE }
+}
+
+fun <T> List<T>.moveLastToFirst(apply: Boolean = true): List<T> {
+    if (this.isEmpty() || !apply) return this
+    val last = this.last()
+    return listOf(last) + this.dropLast(1)
 }

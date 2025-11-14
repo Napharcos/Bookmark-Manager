@@ -6,6 +6,16 @@ external object chrome {
     val tabs: Tabs
     val runtime: Runtime
     val scripting: Scripting
+    val action: Action
+}
+
+external interface Action {
+    fun setIcon(details: SetIconDetails)
+}
+
+external interface SetIconDetails {
+    var path: dynamic /* String | IconPathObject */
+    var tabId: Int?
 }
 
 external interface I18n {

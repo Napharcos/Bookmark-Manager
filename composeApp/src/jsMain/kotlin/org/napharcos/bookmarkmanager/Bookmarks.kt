@@ -46,7 +46,7 @@ fun Bookmark(
     name: String,
     modified: String = Clock.System.now().toEpochMilliseconds().toString(),
     type: String,
-    url: String = "./options.html",
+    url: String = "",
     index: Int,
     imageId: String,
     image: String,

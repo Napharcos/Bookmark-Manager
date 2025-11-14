@@ -6,14 +6,14 @@ import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H2
 import org.jetbrains.compose.web.dom.Text
+import org.napharcos.bookmarkmanager.UiState
+import org.napharcos.bookmarkmanager.ViewModel
 import org.napharcos.bookmarkmanager.data.Values
 import org.napharcos.bookmarkmanager.getString
-import org.napharcos.bookmarkmanager.options.OptionsViewModel
-import org.napharcos.bookmarkmanager.options.UiState
 
 @Composable
 fun NavRail(
-    viewModel: OptionsViewModel,
+    viewModel: ViewModel,
     uiState: UiState,
     height: Int
 ) {

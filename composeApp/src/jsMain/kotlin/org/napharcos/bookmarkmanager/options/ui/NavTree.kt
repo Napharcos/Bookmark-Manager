@@ -4,17 +4,17 @@ import androidx.compose.runtime.Composable
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Div
 import org.napharcos.bookmarkmanager.BookmarksTree
+import org.napharcos.bookmarkmanager.UiState
+import org.napharcos.bookmarkmanager.ViewModel
 import org.napharcos.bookmarkmanager.buildTree
 import org.napharcos.bookmarkmanager.data.Constants
 import org.napharcos.bookmarkmanager.data.Values
 import org.napharcos.bookmarkmanager.folderNameBuilder
 import org.napharcos.bookmarkmanager.getString
-import org.napharcos.bookmarkmanager.options.OptionsViewModel
-import org.napharcos.bookmarkmanager.options.UiState
 
 @Composable
 fun BookmarksNavTree(
-    viewModel: OptionsViewModel,
+    viewModel: ViewModel,
     uiState: UiState,
     height: Int
 ) {
@@ -53,7 +53,7 @@ fun BookmarksNavTree(
 
 @Composable
 fun NavTree(
-    viewModel: OptionsViewModel,
+    viewModel: ViewModel,
     uiState: UiState,
     openFolders: List<String>,
     list: List<BookmarksTree>,

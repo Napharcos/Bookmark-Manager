@@ -22,4 +22,6 @@ interface DatabaseRepository {
     suspend fun deleteBookmark(scope: CoroutineScope, uuid: String)
 
     suspend fun getBookmarkByImage(scope: CoroutineScope, imageId: String): Bookmarks?
+
+    suspend fun getBookmarkByUrl(scope: CoroutineScope, url: String): Bookmarks?
 }

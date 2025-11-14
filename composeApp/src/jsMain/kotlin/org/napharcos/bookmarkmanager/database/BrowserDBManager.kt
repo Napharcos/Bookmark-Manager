@@ -166,4 +166,15 @@ class BrowserDBManager(): DatabaseRepository {
                 ?.unsafeCast<Bookmarks>()
         }
     }
+
+    override suspend fun getBookmarkByUrl(scope: CoroutineScope, url: String): Bookmarks? {
+        val database = getDatabase(scope).await()
+
+        return database.transaction(TABLE_NAME) {
+            objectStore(TABLE_NAME)
+                .index("url")
+                .get(Key(url))
+                ?.unsafeCast<Bookmarks>()
+        }
+    }
 }
