@@ -35,6 +35,7 @@ fun TopbarContent(
                 style {
                     display(DisplayStyle.Flex)
                     flexDirection(FlexDirection.Row)
+                    justifyContent(JustifyContent.SpaceBetween)
                     padding(8.px)
                     paddingTop(4.px)
                     width(100.percent)
@@ -42,11 +43,16 @@ fun TopbarContent(
                 }
             }
         ) {
-            LeftElements()
-            LeftElementsContent(uiState, viewModel)
-            Space()
-            Space()
-            Space()
+            Div({
+                style {
+                    display(DisplayStyle.Flex)
+                    flexDirection(FlexDirection.Row)
+                    justifyContent(JustifyContent.Start)
+                }
+            }) {
+                LeftElements()
+                LeftElementsContent(uiState, viewModel)
+            }
             RightElements(viewModel, uiState)
         }
     }
@@ -138,10 +144,9 @@ fun RightElements(
     Div(
         attrs = {
             style {
-                flexGrow(1)
-                maxWidth(150.px)
+                maxWidth(200.px)
                 paddingLeft(8.px)
-                paddingRight(8.px)
+                marginRight(8.px)
             }
         }
     ) {
@@ -163,8 +168,7 @@ fun LeftElements() {
     Div(
         attrs = {
             style {
-                flexGrow(0.5)
-                maxWidth(150.px)
+                width(150.px)
                 paddingRight(8.px)
                 paddingLeft(8.px)
             }
@@ -177,18 +181,6 @@ fun LeftElements() {
 }
 
 @Composable
-fun Space() {
-    Div(
-        attrs = {
-            style {
-                flexGrow(1)
-                maxWidth(300.px)
-            }
-        }
-    )
-}
-
-@Composable
 fun LeftElementsContent(
     uiState: UiState,
     viewModel: ViewModel
@@ -196,8 +188,8 @@ fun LeftElementsContent(
     Div(
         attrs = {
             style {
-                flexGrow(1)
-                maxWidth(300.px)
+                paddingRight(8.px)
+                width(250.px)
             }
         }
     ) {

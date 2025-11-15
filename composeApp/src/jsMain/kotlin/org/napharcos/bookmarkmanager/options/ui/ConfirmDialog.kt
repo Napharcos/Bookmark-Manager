@@ -15,6 +15,8 @@ import org.napharcos.bookmarkmanager.getString
 fun ConfirmDialog(
     title: String,
     text: String,
+    closeText: String = getString(Values.CANCEL),
+    confirmText: String = getString(Values.CONFIRM),
     onClose: () -> Unit,
     onConfirm: () -> Unit
 ) {
@@ -64,7 +66,9 @@ fun ConfirmDialog(
             }
             ConfirmDialogButtons(
                 onConfirm = onConfirm,
-                onCancel = onClose
+                onCancel = onClose,
+                closeText = closeText,
+                confirmText = confirmText
             )
         }
     }
@@ -72,6 +76,8 @@ fun ConfirmDialog(
 
 @Composable
 fun ConfirmDialogButtons(
+    closeText: String = getString(Values.CANCEL),
+    confirmText: String = getString(Values.CONFIRM),
     onConfirm: () -> Unit,
     onCancel: () -> Unit,
     enabled: Boolean = true
@@ -97,7 +103,7 @@ fun ConfirmDialogButtons(
                 onMouseLeave { cancelEntered = false }
             }
         ) {
-            Text(getString(Values.CANCEL))
+            Text(closeText)
         }
         Button(
             attrs = {
@@ -108,7 +114,7 @@ fun ConfirmDialogButtons(
                 onMouseLeave { confirmEntered = false }
             }
         ) {
-            Text(getString(Values.CONFIRM))
+            Text(confirmText)
         }
     }
 }

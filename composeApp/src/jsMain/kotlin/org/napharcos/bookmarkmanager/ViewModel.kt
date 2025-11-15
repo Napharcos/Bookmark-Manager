@@ -63,7 +63,6 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
             val openFolders = openParents(this, lastOpenFolder).distinct()
 
             _uiState.update {
-                console.log(openFolders.size)
                 it.copy(
                     openFolders = openFolders,
                     selectedFolder = lastOpenFolder,

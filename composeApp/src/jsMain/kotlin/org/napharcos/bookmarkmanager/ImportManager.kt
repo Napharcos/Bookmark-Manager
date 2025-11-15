@@ -15,8 +15,8 @@ import org.w3c.dom.HTMLInputElement
 import org.w3c.files.File
 import org.w3c.files.FileReader
 import org.w3c.files.get
-import kotlin.collections.component1
-import kotlin.collections.component2
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 class ImportManager(
     private val browserDBRepository: DatabaseRepository
@@ -37,8 +37,16 @@ class ImportManager(
         """
 
         var isLoading by mutableStateOf(false)
-
         var loadingText by mutableStateOf("")
+
+        var duplicateUuid by mutableStateOf<BookmarkData?>(null)
+        var duplicateUrl by mutableStateOf<BookmarkData?>(null)
+        var newParentId by mutableStateOf("")
+
+        var manageDuplicateUuid: Int? = null
+        var manageDuplicateUrl: Int? = null
+
+        var duplicate: CompletableDeferred<Int>? = null
     }
 
     fun importBookmarksFile() {
@@ -116,6 +124,8 @@ class ImportManager(
                 bookmarks.roots.trash?.children?.addBookmarks(this, Constants.TRASH)
                 bookmarks.roots.custom_root?.trash?.children?.addBookmarks(this, Constants.TRASH)
 
+                manageDuplicateUrl = null
+                manageDuplicateUuid = null
                 isLoading = false
                 loadingText = ""
             }
@@ -130,38 +140,80 @@ class ImportManager(
         var nextIndex = browserRootChilds.maxByOrNull { it.index }?.index ?: 0
 
         for (it in this) {
-            val browserBookmark = browserDBRepository.getBookmark(scope, it.guid)
+            loadingText = getString(Values.LOADING_ADD_BOOKMARK, it.name)
 
-            if (browserBookmark == null) {
-                loadingText = getString(Values.LOADING_ADD_BOOKMARK, it.name)
+            val uuidBookmark = browserDBRepository.getBookmark(scope, it.guid)
+            val urlBookmark = if (it.url.isNotEmpty()) browserDBRepository.getBookmarkByUrl(scope, it.url) else null
 
-                val date = (if (it.date_modified.isNotEmpty() && it.date_modified != "0") it.date_modified else it.date_added).toLongOrNull()?.convertChromeTime() ?: 0L
-                val imageId = if (it.meta_info?.imageID.isNullOrEmpty()) {
-                    it.meta_info?.Thumbnail?.substringAfterLast("/")?.substringBeforeLast(".") ?: ""
-                } else it.meta_info.imageID
+            if (uuidBookmark == null && urlBookmark == null) {
+                nextIndex = addBookmark(it, parentId, nextIndex)
+            } else if (uuidBookmark?.uuid == it.guid) {
+                val override = override(Type.UUID, parentId, it)
 
-                val newBookmark = Bookmark(
-                    uuid = it.guid,
-                    parentId = parentId,
-                    name = it.name,
-                    modified = date.toString(),
-                    type = if (it.type == Constants.FOLDER) Constants.FOLDER else Constants.URL,
-                    url = it.url,
-                    index = nextIndex,
-                    imageId = imageId,
-                    image = if (it.type == Constants.FOLDER) "./folder.svg" else "",
-                    undoTrash = it.meta_info?.undoTrashParentId ?: ""
-                )
+                if (override == 1)
+                    nextIndex = addBookmark(it, parentId, nextIndex, true)
+                else if (override == 2)
+                    nextIndex = addBookmark(it, parentId, nextIndex, newUUID = true)
+            } else if (urlBookmark?.url == it.url) {
+                console.log("old: ${urlBookmark.url}")
+                console.log("new: ${it.url}")
 
-                browserDBRepository.addBookmark(newBookmark)
+                val override = override(Type.URL, parentId, it)
 
-                nextIndex++
-            } else {
-                // TODO
+                if (override == 1)
+                    nextIndex = addBookmark(it, parentId, nextIndex)
             }
 
             it.children.addBookmarks(scope, it.guid)
         }
+    }
+
+    private suspend fun override(type: Type, parentId: String, element: BookmarkData): Int? {
+        var override = when (type) {
+            Type.UUID -> manageDuplicateUuid
+            Type.URL -> manageDuplicateUrl
+        }
+
+        if (override == null) {
+            duplicate = CompletableDeferred()
+            newParentId = parentId
+            if (type == Type.UUID) duplicateUuid = element
+            if (type == Type.URL) duplicateUrl = element
+            override = duplicate?.await()
+            duplicate = null
+            newParentId = ""
+            duplicateUuid = null
+            duplicateUrl = null
+        }
+
+        return override
+    }
+
+    @OptIn(ExperimentalUuidApi::class)
+    private fun addBookmark(element: BookmarkData, parentId: String, nextIndex: Int, override: Boolean = false, newUUID: Boolean = false): Int {
+        val date =
+            (if (element.date_modified.isNotEmpty() && element.date_modified != "0") element.date_modified else element.date_added).toLongOrNull()
+                ?.convertChromeTime() ?: 0L
+        val imageId = if (element.meta_info?.imageID.isNullOrEmpty()) {
+            element.meta_info?.Thumbnail?.substringAfterLast("/")?.substringBeforeLast(".") ?: ""
+        } else element.meta_info.imageID
+
+        val newBookmark = Bookmark(
+            uuid = if (newUUID) Uuid.random().toHexString() else element.guid,
+            parentId = parentId,
+            name = element.name,
+            modified = date.toString(),
+            type = if (element.type == Constants.FOLDER) Constants.FOLDER else Constants.URL,
+            url = element.url,
+            index = nextIndex,
+            imageId = imageId,
+            image = if (element.type == Constants.FOLDER) "./folder.svg" else "",
+            undoTrash = element.meta_info?.undoTrashParentId ?: ""
+        )
+
+        browserDBRepository.addBookmark(newBookmark, override)
+
+        return nextIndex + 1
     }
 
     private fun File.readJsonImage() {
@@ -295,4 +347,6 @@ class ImportManager(
         reader.readAsDataURL(this)
         result.await()
     }
+
+    enum class Type { UUID, URL }
 }

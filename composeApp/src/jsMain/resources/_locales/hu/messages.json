@@ -109,5 +109,38 @@
   },
   "new_folder": {
     "message": "Új mappa"
+  },
+  "duplicate_id": {
+    "message": "Duplikált azonosító"
+  },
+  "duplicate_url": {
+    "message": "Duplikált elérési út"
+  },
+  "apply_for_all": {
+    "message": "Alkalmazás az összesre"
+  },
+  "old_element": {
+    "message": "Régi elem"
+  },
+  "new_element": {
+    "message": "Új elem"
+  },
+  "identifier": {
+    "message": "Azonosító: "
+  },
+  "modified": {
+    "message": "Módosítva: "
+  },
+  "parent": {
+    "message": "Szülő: "
+  },
+  "drop": {
+    "message": "Eldobás"
+  },
+  "override": {
+    "message": "Felülírás"
+  },
+  "keeps_both": {
+    "message": "Mindkettőt megtart"
   }
 }

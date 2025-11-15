@@ -53,7 +53,7 @@ fun OptionsSummary() {
         MainPage(viewModel, uiState)
     }
 
-    DialogSummary(uiState, viewModel)
+    DialogSummary(uiState, viewModel, container)
 }
 
 @Composable

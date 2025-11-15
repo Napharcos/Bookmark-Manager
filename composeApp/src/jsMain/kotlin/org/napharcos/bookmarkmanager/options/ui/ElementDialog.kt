@@ -139,19 +139,17 @@ fun ElementDialog(
                 ) {
                     Text(title)
                 }
-                Div(
-                    attrs = {
-                        style {
-                            alignSelf(AlignSelf.Center)
-                            width(340.px)
-                            height(221.px)
-                            backgroundImage("url('$image')")
-                            backgroundSize(if (image == "./folder.svg") "contain" else "scale-down")
-                            backgroundPosition("center")
-                            backgroundRepeat("no-repeat")
-                        }
+                Div({
+                    style {
+                        alignSelf(AlignSelf.Center)
+                        width(340.px)
+                        height(221.px)
+                        backgroundImage("url('$image')")
+                        backgroundSize(if (image == "./folder.svg") "contain" else "scale-down")
+                        backgroundPosition("center")
+                        backgroundRepeat("no-repeat")
                     }
-                )
+                })
                 SelectElement(
                     text = getString(Values.TYPE),
                     onChange = typeChange,
