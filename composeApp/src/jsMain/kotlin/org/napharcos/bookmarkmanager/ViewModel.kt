@@ -603,7 +603,7 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
 
                 if (!isOpen)
                     container.browserDatabase.getBookmark(this, uuid)
-                        ?.let { onNavElementFoldClick(it.parentId) }
+                        ?.let { onNavElementFoldClick(it.parentId, isOpen) }
 
                 _uiState.update {
                     it.copy(
@@ -620,9 +620,9 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
         }
     }
 
-    fun onNavElementFoldClick(uuid: String) {
+    fun onNavElementFoldClick(uuid: String, open: Boolean? = null) {
         AppScope.scope.launch {
-            val isOpen = uiState.value.openFolders.contains(uuid)
+            val isOpen = open ?: uiState.value.openFolders.contains(uuid)
 
             val childFolders = container.browserDatabase.getSpecificFolders(this, uuid)
             val newFolders = mutableListOf<Bookmarks>()
@@ -635,7 +635,7 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
             _uiState.update {
                 it.copy(
                     openFolders = if (uuid.isNotEmpty()) {
-                        if (isOpen) it.openFolders - uuid else it.openFolders + uuid
+                        if (isOpen) it.openFolders - uuid else (it.openFolders + uuid).distinct()
                     } else it.openFolders,
                     folders = if (uuid.isNotEmpty()) {
                         if (isOpen) it.folders else (it.folders + newFolders).distinctBy { f -> f.uuid }
