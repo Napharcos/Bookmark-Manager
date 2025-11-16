@@ -91,17 +91,13 @@ fun TopBar(
             style {
                 position(Position.Relative)
                 width(100.percent)
-                height(topbarHeight().px)
+                height(145.px)
                 if (uiState.darkening) backgroundColor(rgba(50, 50, 50, 0.6))
             }
         }
     ) {
         TopbarContent(uiState, viewModel)
     }
-}
-
-fun topbarHeight(): Int {
-    return (window.innerHeight * (15.0 / 100.0)).roundToInt()
 }
 
 fun Int.toTextColor(): CSSColorValue {

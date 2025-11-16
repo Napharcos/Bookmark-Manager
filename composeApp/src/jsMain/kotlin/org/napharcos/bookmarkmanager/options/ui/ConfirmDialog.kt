@@ -18,7 +18,9 @@ fun ConfirmDialog(
     closeText: String = getString(Values.CANCEL),
     confirmText: String = getString(Values.CONFIRM),
     onClose: () -> Unit,
-    onConfirm: () -> Unit
+    onConfirm: () -> Unit,
+    enabled: Boolean = true,
+    moreContent: (@Composable () -> Unit)? = null
 ) {
     Div(
         attrs = {
@@ -34,9 +36,10 @@ fun ConfirmDialog(
                     justifyContent(JustifyContent.SpaceBetween)
                     backgroundColor(rgb(60, 60, 60))
                     borderRadius(12.px)
-                    padding(4.px)
+                    padding(8.px)
                     minWidth(300.px)
                     minHeight(150.px)
+                    maxWidth(450.px)
                     maxHeight(300.px)
                     textAlign("center")
                     property("box-shadow", "rgba(0, 0, 0, 0.3) 0px 4px 12px")
@@ -57,18 +60,22 @@ fun ConfirmDialog(
                 Div(
                     attrs = {
                         style {
+                            if (moreContent != null) textAlign("left")
                             fontSize(1.2.em)
                         }
                     }
                 ) {
                     Text(text)
                 }
+                if (moreContent != null)
+                    moreContent()
             }
             ConfirmDialogButtons(
                 onConfirm = onConfirm,
                 onCancel = onClose,
                 closeText = closeText,
-                confirmText = confirmText
+                confirmText = confirmText,
+                enabled = enabled
             )
         }
     }

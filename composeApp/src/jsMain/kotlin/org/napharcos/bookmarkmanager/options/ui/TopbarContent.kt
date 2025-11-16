@@ -144,15 +144,15 @@ fun RightElements(
     Div(
         attrs = {
             style {
-                maxWidth(200.px)
+                maxWidth(300.px)
                 paddingLeft(8.px)
-                marginRight(8.px)
+                paddingRight(8.px)
             }
         }
     ) {
         ElementButton(getString(Values.CHANGE_BACKGROUND)) { viewModel.updateShowingChangeBackground(true) }
         ElementButton(getString(Values.IMPORT_BOOKMARKS)) { viewModel.updateShowingImportDialog(true) }
-        ElementButton("Könyjelzők exportálása") { viewModel.deleteDB() }
+        ElementButton(getString(Values.EXPORT_BOOKMARKS)) { viewModel.updateShowingExportDialog(true) }
         ElementButton(getString(
             if (uiState.selectedFolder != Constants.TRASH) Values.ADD_NEW_ELEMENT else Values.CLEAR_TRASH_BUTTON
         )) {
@@ -204,7 +204,7 @@ fun ElementButton(
     text: String,
     onClick: () -> Unit
 ) {
-    Div {
+    Div({ style { paddingRight(4.px) } }) {
         Button(
             attrs = {
                 style {

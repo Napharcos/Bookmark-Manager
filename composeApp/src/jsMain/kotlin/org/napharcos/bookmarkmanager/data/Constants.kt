@@ -1,6 +1,7 @@
 package org.napharcos.bookmarkmanager.data
 
 object Constants {
+    const val ROOT_ID = "4a6c4ba4-8cf9-4373-a3a4-c0dc859468bb"
     const val FOLDER = "folder"
     const val URL = "url"
     const val DARKENING = "darkening"

@@ -6,7 +6,8 @@ import kotlinx.serialization.Serializable
 data class BookmarkJson(
     val checksum: String,
     val roots: BookmarkJsonRoots,
-    val version: Int = 1
+    val version: Int,
+
 )
 
 @Serializable

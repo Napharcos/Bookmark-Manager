@@ -1,6 +1,7 @@
 package org.napharcos.bookmarkmanager.options.ui
 
 import androidx.compose.runtime.Composable
+import org.napharcos.bookmarkmanager.ExportManager
 import org.napharcos.bookmarkmanager.ImportManager
 import org.napharcos.bookmarkmanager.UiState
 import org.napharcos.bookmarkmanager.ViewModel
@@ -75,10 +76,25 @@ fun DialogSummary(
                 viewModel = viewModel,
                 onClose = { viewModel.updateShowingImportDialog(false) }
             )
+
+        uiState.showingExportBookmarksDialog ->
+            ExportDialog(
+                viewModel = viewModel,
+                onClose = { viewModel.updateShowingExportDialog(false) }
+            )
     }
+
+    if (uiState.showingDeleteDBDialog)
+        DeleteDBDialog(
+            onClose = { viewModel.updateShowingDeleteDBDialog(false) },
+            onConfirm = { viewModel.deleteDB() }
+        )
 
     if (ImportManager.isLoading)
         LoadingDialog(ImportManager.loadingText)
+
+    if (ExportManager.isLoading)
+        LoadingDialog(ExportManager.loadingText)
 
     when {
         ImportManager.duplicateUuid != null ->

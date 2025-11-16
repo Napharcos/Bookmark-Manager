@@ -5,6 +5,8 @@ package org.napharcos.bookmarkmanager
 import kotlin.js.Date
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
+import kotlin.time.toJSDate
 import kotlin.time.toKotlinInstant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -95,4 +97,9 @@ fun Bookmarks.copy(
 @OptIn(ExperimentalTime::class)
 fun Long.convertChromeTime(): Long {
     return Date(Date.UTC(1601, 0, 1) + this / 1000).toKotlinInstant().toEpochMilliseconds()
+}
+
+fun Long.toChromeTime(): Long {
+    val epochDiffMillis = 11_644_473_600_000L // ms between 1601-01-01 and 1970-01-01
+    return (this + epochDiffMillis) * 1_000L
 }

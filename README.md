@@ -1,1 +1,3 @@
-Visual bookmark manager extension for Chromium-based browsers.
+# Bookmark MAnager
+
+Bookmark manager for Chromium-based browsers with images.

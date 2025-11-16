@@ -2,6 +2,9 @@
   "app_name": {
     "message": "Bookmark Manager"
   },
+  "description": {
+    "message": "Bookmark manager for Chromium-based browsers with images."
+  },
   "add_bookmark": {
     "message": "Add bookmark"
   },
@@ -22,5 +25,167 @@
   },
   "darkened_background": {
     "message": "Darkened background: "
+  },
+  "loading_file": {
+    "message": "Loading file..."
+  },
+  "loading_add_bookmark": {
+    "message": "Adding bookmark: $1"
+  },
+  "loading_update_bookmark": {
+    "message": "Updating bookmark: $1"
+  },
+  "trash": {
+    "message": "Trash"
+  },
+  "change_background": {
+    "message": "Change wallpaper"
+  },
+  "background_image_url": {
+    "message": "Image path (URL): "
+  },
+  "or": {
+    "message": "or"
+  },
+  "browse": {
+    "message": "Browse"
+  },
+  "remove": {
+    "message": "Remove"
+  },
+  "import_bookmarks": {
+    "message": "Import bookmarks"
+  },
+  "import_bookmarks_file": {
+    "message": "Import bookmarks file"
+  },
+  "import_bookmarks_image_opera": {
+    "message": "Import bookmarks image from Opera"
+  },
+  "import_bookmarks_image_vivaldi": {
+    "message": "Import bookmarks image from Vivaldi"
+  },
+  "cancel": {
+    "message": "Cancel"
+  },
+  "confirm": {
+    "message": "Confirm"
+  },
+  "add_new_element": {
+    "message": "Add new element"
+  },
+  "folder": {
+    "message": "Folder"
+  },
+  "bookmark": {
+    "message": "Bookmark"
+  },
+  "name": {
+    "message": "Name: "
+  },
+  "path": {
+    "message": "Path (URL): "
+  },
+  "type": {
+    "message": "Type: "
+  },
+  "edit_element": {
+    "message": "Change element"
+  },
+  "move_trash_title": {
+    "message": "Delete elements"
+  },
+  "move_trash_text": {
+    "message": "Are you sure you want to move the selected $1 item to the trash?"
+  },
+  "delete_title": {
+    "message": "Permanent deletion"
+  },
+  "delete_text": {
+    "message": "Are you sure you want to permanently delete the selected $1 item?"
+  },
+  "clear_trash": {
+    "message": "Are you sure you want to permanently delete the entire contents of the trash?"
+  },
+  "clear_trash_button": {
+    "message": "Empty trash"
+  },
+  "new_folder": {
+    "message": "New folder"
+  },
+  "duplicate_id": {
+    "message": "Duplicate identifier"
+  },
+  "duplicate_url": {
+    "message": "Duplicate path"
+  },
+  "apply_for_all": {
+    "message": "Apply for all"
+  },
+  "old_element": {
+    "message": "Old element"
+  },
+  "new_element": {
+    "message": "New element"
+  },
+  "identifier": {
+    "message": "Identifier: "
+  },
+  "modified": {
+    "message": "Modified: "
+  },
+  "parent": {
+    "message": "Parent: "
+  },
+  "drop": {
+    "message": "Drop"
+  },
+  "override": {
+    "message": "Override"
+  },
+  "keeps_both": {
+    "message": "Keeps both"
+  },
+  "creating_file": {
+    "message": "Creating file"
+  },
+  "creating_structure": {
+    "message": "Creating strukture"
+  },
+  "export": {
+    "message": "Export"
+  },
+  "export_bookmarks": {
+    "message": "Export bookmarks"
+  },
+  "delete": {
+    "message": "Delete"
+  },
+  "delete_db_text": {
+    "message": "Permanently delete all data"
+  },
+  "export_bookmarks_text": {
+    "message": "Export data as a \"Bookmarks\" file"
+  },
+  "processing_element": {
+    "message": "Processing element: $1"
+  },
+  "not_opera_compatible": {
+    "message": "Not compatible with Opera."
+  },
+  "recommand_new_folder": {
+    "message": "When importing, use Vivaldi image import."
+  },
+  "export_vivaldi_image": {
+    "message": "Export images, it is recommended to create a new folder for the images."
+  },
+  "delete_db": {
+    "message": "Permanently delete all data"
+  },
+  "delete_db_dialog_text": {
+    "message": "To confirm, write \"$1\" in the field."
+  },
+  "delete_db_confirm_text": {
+    "message": "Delete bookmarks"
   }
 }

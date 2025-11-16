@@ -111,7 +111,9 @@ class ImportManager(
                 val bookmarks = json.decodeFromString<BookmarkJson>(data)
                 val rootFolders = mutableListOf<BookmarkData>()
 
-                bookmarks.roots.bookmark_bar.let { if (it.children.isNotEmpty()) rootFolders.add(it) }
+                if (bookmarks.roots.bookmark_bar.guid != Constants.ROOT_ID)
+                    bookmarks.roots.bookmark_bar.let { if (it.children.isNotEmpty()) rootFolders.add(it) }
+                else bookmarks.roots.bookmark_bar.children.forEach { rootFolders.add(it) }
                 bookmarks.roots.other.let { if (it.children.isNotEmpty()) rootFolders.add(it) }
                 bookmarks.roots.synced.let { if (it.children.isNotEmpty()) rootFolders.add(it) }
                 bookmarks.roots.custom_root?.userRoot?.let { if (it.children.isNotEmpty()) rootFolders.add(it) }
@@ -155,9 +157,6 @@ class ImportManager(
                 else if (override == 2)
                     nextIndex = addBookmark(it, parentId, nextIndex, newUUID = true)
             } else if (urlBookmark?.url == it.url) {
-                console.log("old: ${urlBookmark.url}")
-                console.log("new: ${it.url}")
-
                 val override = override(Type.URL, parentId, it)
 
                 if (override == 1)
@@ -190,7 +189,13 @@ class ImportManager(
     }
 
     @OptIn(ExperimentalUuidApi::class)
-    private fun addBookmark(element: BookmarkData, parentId: String, nextIndex: Int, override: Boolean = false, newUUID: Boolean = false): Int {
+    private fun addBookmark(
+        element: BookmarkData,
+        parentId: String,
+        nextIndex: Int,
+        override: Boolean = false,
+        newUUID: Boolean = false
+    ): Int {
         val date =
             (if (element.date_modified.isNotEmpty() && element.date_modified != "0") element.date_modified else element.date_added).toLongOrNull()
                 ?.convertChromeTime() ?: 0L

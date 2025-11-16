@@ -16,6 +16,7 @@ data class UiState(
     val showingExportBookmarksDialog: Boolean = false,
     val showindAddNewElementDialog: Boolean = false,
     val showingClearTrashDialog: Boolean = false,
+    val showingDeleteDBDialog: Boolean = false,
     val trashElements: List<String> = emptyList(),
     val editElement: Bookmarks? = null,
     val selectedElements: List<String> = emptyList(),

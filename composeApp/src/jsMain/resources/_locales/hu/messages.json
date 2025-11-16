@@ -2,6 +2,9 @@
   "app_name": {
     "message": "Könyvjelző kezelő"
   },
+  "description": {
+    "message": "Képes könyvjelző kezelő chromium alapú böngészőkhöz."
+  },
   "add_bookmark": {
     "message": "Könyvjelző hozzáadása"
   },
@@ -142,5 +145,47 @@
   },
   "keeps_both": {
     "message": "Mindkettőt megtart"
+  },
+  "creating_file": {
+    "message": "Fájl létrehozása"
+  },
+  "creating_structure": {
+    "message": "Struktúra létrehozása"
+  },
+  "export": {
+    "message": "Exportálás"
+  },
+  "export_bookmarks": {
+    "message": "Könyvjelzők exportálása"
+  },
+  "delete": {
+    "message": "Törlés"
+  },
+  "delete_db_text": {
+    "message": "Minden adat végleges törlése"
+  },
+  "export_bookmarks_text": {
+    "message": "Adatok exportálása \"Bookmarks\" fájlként"
+  },
+  "processing_element": {
+    "message": "Elem feldolgozása: $1"
+  },
+  "not_opera_compatible": {
+    "message": "Nem kompatibilis az Operával."
+  },
+  "recommand_new_folder": {
+    "message": "Importálásnál Vivaldi képek importot használjon."
+  },
+  "export_vivaldi_image": {
+    "message": "Képek exportálása, ajánlott új mappát létrehozni a képeknek."
+  },
+  "delete_db": {
+    "message": "Adatok végleges törlése"
+  },
+  "delete_db_dialog_text": {
+    "message": "A megerősítéséhez írja be a \"$1\" szöveget a mezőbe."
+  },
+  "delete_db_confirm_text": {
+    "message": "Könyvjelzők törlése"
   }
 }

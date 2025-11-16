@@ -99,9 +99,10 @@ fun ImportDialog(
 @Composable
 fun ImportElement(
     text: String,
-    tooltip: String,
+    tooltip: String?,
     buttonText: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    tooltipWidth: Int = 620
 ) {
     var showingInfo by remember { mutableStateOf(false) }
 
@@ -146,26 +147,27 @@ fun ImportElement(
         ) {
             Text(buttonText)
 
-            Span(
-                attrs = {
-                    style {
-                        visibility(if (showingInfo) VisibilityStyle.Visible else VisibilityStyle.Hidden)
-                        width(620.px)
-                        backgroundColor(rgb(27, 27, 27))
-                        color(rgb(190, 190, 190))
-                        borderRadius(6.px)
-                        position(Position.Absolute)
-                        top((-5).px)
-                        left(105.percent)
-                        property("z-index", 1)
-                        whiteSpace("pre-wrap")
-                        textAlign("left")
-                        padding(8.px)
+            if (tooltip != null)
+                Span(
+                    attrs = {
+                        style {
+                            visibility(if (showingInfo) VisibilityStyle.Visible else VisibilityStyle.Hidden)
+                            width(tooltipWidth.px)
+                            backgroundColor(rgb(27, 27, 27))
+                            color(rgb(190, 190, 190))
+                            borderRadius(6.px)
+                            position(Position.Absolute)
+                            top((-5).px)
+                            left(105.percent)
+                            property("z-index", 1)
+                            whiteSpace("pre-wrap")
+                            textAlign("left")
+                            padding(8.px)
+                        }
                     }
+                ) {
+                    Text(tooltip)
                 }
-            ) {
-                Text(tooltip)
-            }
         }
     }
 }

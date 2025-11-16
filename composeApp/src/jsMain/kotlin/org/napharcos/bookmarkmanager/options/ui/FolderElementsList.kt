@@ -11,7 +11,6 @@ import org.napharcos.bookmarkmanager.UiState
 import org.napharcos.bookmarkmanager.ViewModel
 import org.napharcos.bookmarkmanager.addPlaceholder
 import org.napharcos.bookmarkmanager.data.Constants
-import org.napharcos.bookmarkmanager.options.topbarHeight
 import org.w3c.dom.HTMLElement
 import kotlin.math.abs
 import kotlin.math.max
@@ -49,7 +48,7 @@ fun FolderElementsList(
             }
             style {
                 position(Position.Relative)
-                height((window.innerHeight - topbarHeight()).px)
+                height((window.innerHeight - 145).px)
                 width(100.percent)
                 overflowY("auto")
                 overflowX("hidden")

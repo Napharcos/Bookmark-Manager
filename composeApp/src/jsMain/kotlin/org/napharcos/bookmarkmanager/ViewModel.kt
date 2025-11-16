@@ -4,11 +4,15 @@ import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.napharcos.bookmarkmanager.ExportManager
 import org.napharcos.bookmarkmanager.container.Container
 import org.napharcos.bookmarkmanager.data.Constants
 import org.napharcos.bookmarkmanager.data.Values
@@ -326,6 +330,18 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
         }
     }
 
+    fun updateShowingExportDialog(showing: Boolean) {
+        _uiState.update {
+            it.copy(showingExportBookmarksDialog = showing)
+        }
+    }
+
+    fun updateShowingDeleteDBDialog(showing: Boolean) {
+        _uiState.update {
+            it.copy(showingDeleteDBDialog = showing)
+        }
+    }
+
     fun onSelectElementClick(select: Boolean, bookmark: String) {
         _uiState.update {
             it.copy(
@@ -531,6 +547,18 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
         }
     }
 
+    fun exportBookmarks() {
+        val exportManager = ExportManager(container.browserDatabase)
+
+        exportManager.exportBookmarkFile()
+    }
+
+    fun exportVivaldiImages() {
+        val exportManager = ExportManager(container.browserDatabase)
+
+        exportManager.exportVivaldiImages()
+    }
+
     fun importBookmarks() {
         importManager.importBookmarksFile()
     }
@@ -558,8 +586,11 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
 
     fun deleteDB() {
         AppScope.scope.launch {
-            container.browserDatabase.deleteDB()
-            reloadData()
+            try {
+                container.browserDatabase.deleteDB()
+            } finally {
+                window.location.reload()
+            }
         }
     }
 

@@ -4,16 +4,20 @@ import com.juul.indexeddb.Database
 import com.juul.indexeddb.Key
 import com.juul.indexeddb.KeyPath
 import com.juul.indexeddb.deleteDatabase
+import com.juul.indexeddb.logs.Logger
+import com.juul.indexeddb.logs.Type
 import com.juul.indexeddb.openDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import org.napharcos.bookmarkmanager.AppScope
 import org.napharcos.bookmarkmanager.Bookmarks
 import org.napharcos.bookmarkmanager.data.Constants
+import org.w3c.dom.events.Event
 import kotlin.js.unsafeCast
 
 @OptIn(DelicateCoroutinesApi::class)
@@ -48,8 +52,11 @@ class BrowserDBManager(): DatabaseRepository {
         return deferredDatabase!!
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     override suspend fun deleteDB() {
-        deleteDatabase(DB_NAME)
+        deferredDatabase?.takeIf { it.isCompleted }?.getCompleted()?.close()
+        deferredDatabase = null
+        deleteDatabase(DB_NAME, ConsoleLogger)
     }
 
     override fun addBookmark(bookmark: Bookmarks, override: Boolean) {
@@ -176,5 +183,9 @@ class BrowserDBManager(): DatabaseRepository {
                 .get(Key(url))
                 ?.unsafeCast<Bookmarks>()
         }
+    }
+
+    object ConsoleLogger: Logger {
+        override fun log(type: Type, event: Event?, message: () -> String) { console.log(message) }
     }
 }
