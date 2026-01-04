@@ -40,7 +40,8 @@ fun NewElementDialog(
         urlChange = { url = it },
         confirmEnabled = if (type == Constants.FOLDER) name.isNotEmpty() else url.isNotEmpty(),
         onCancel = onCancel,
-        onConfirm = { onConfirm(type, name, url, image) }
+        onConfirm = { onConfirm(type, name, url, image) },
+        pasteClick = { image = viewModel.onClipboardClick() }
     )
 }
 
@@ -74,7 +75,8 @@ fun EditElementDialog(
         urlChange = { url = it },
         confirmEnabled = true,
         onCancel = onCancel,
-        onConfirm = { onConfirm(bookmark, name, url, image) }
+        onConfirm = { onConfirm(bookmark, name, url, image) },
+        pasteClick = { image = viewModel.onClipboardClick() }
     )
 }
 
@@ -91,6 +93,7 @@ fun ElementDialog(
     nameChange: (String) -> Unit,
     url: String,
     urlChange: (String) -> Unit,
+    pasteClick: suspend () -> Unit,
     confirmEnabled: Boolean,
     onCancel: () -> Unit,
     onConfirm: () -> Unit
@@ -189,16 +192,36 @@ fun ElementDialog(
                     ) {
                         Text(getString(Values.OR))
                     }
-                    Button(
-                        attrs = {
-                            style {
-                                width(120.px)
-                                marginTop(8.px)
-                            }
-                            onClick { browseImage() }
+
+                    Div({
+                        style {
+                            display(DisplayStyle.Flex)
+                            flexDirection(FlexDirection.Row)
+                            justifyContent(JustifyContent.SpaceAround)
+                            width(100.percent)
                         }
-                    ) {
-                        Text(getString(if (image.startsWith("data:image")) Values.REMOVE else Values.BROWSE))
+                    }) {
+                        Button(
+                            attrs = {
+                                style {
+                                    width(120.px)
+                                }
+                                onClick { browseImage() }
+                            }
+                        ) {
+                            Text(getString(if (image.startsWith("data:image")) Values.REMOVE else Values.BROWSE))
+                        }
+
+                        Button(
+                            attrs = {
+                                style {
+                                    width(120.px)
+                                }
+                                onClick { AppScope.scope.launch { pasteClick() } }
+                            }
+                        ) {
+                            Text(getString(Values.CLIPBOARD))
+                        }
                     }
                 }
             }

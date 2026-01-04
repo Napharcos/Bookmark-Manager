@@ -3,7 +3,7 @@
   "description": "__MSG_description__",
   "version": "0.1",
   "manifest_version": 3,
-  "permissions": ["tabs", "activeTab", "scripting", "storage"],
+  "permissions": ["tabs", "activeTab", "scripting", "storage", "clipboardRead"],
   "host_permissions": ["<all_urls>"],
   "chrome_url_overrides" : {
     "bookmarks": "options.html"

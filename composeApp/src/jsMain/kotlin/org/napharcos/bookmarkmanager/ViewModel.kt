@@ -6,6 +6,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.await
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -520,6 +521,20 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
 
         input.click()
         return result.await()
+    }
+
+    suspend fun onClipboardClick(): String {
+        val deferred = CompletableDeferred<String>()
+
+        ClipboardUtils.readImage { data, error ->
+            when {
+                error != null -> console.log(error)
+                data != null -> deferred.complete(data)
+                else -> console.log("Image is not available – copy an image to clipboard.")
+            }
+        }
+
+        return deferred.await()
     }
 
     fun reloadData() {

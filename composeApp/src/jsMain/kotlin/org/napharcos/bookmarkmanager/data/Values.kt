@@ -62,4 +62,5 @@ object Values {
     const val DELETE_DB_DIALOG_TEXT = "delete_db_dialog_text"
     const val DELETE_DB = "delete_db"
     const val DELETE_DB_CONFIRM_TEXT = "delete_db_confirm_text"
+    const val CLIPBOARD = "clipboard"
 }

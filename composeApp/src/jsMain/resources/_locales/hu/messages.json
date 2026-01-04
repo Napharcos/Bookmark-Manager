@@ -187,5 +187,8 @@
   },
   "delete_db_confirm_text": {
     "message": "Könyvjelzők törlése"
+  },
+  "clipboard": {
+    "message": "Vágólap"
   }
 }
