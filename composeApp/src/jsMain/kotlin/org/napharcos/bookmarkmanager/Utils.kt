@@ -1,6 +1,8 @@
 package org.napharcos.bookmarkmanager
 
 import androidx.compose.runtime.Composable
+import kotlinx.browser.window
+import kotlinx.coroutines.await
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.Color
@@ -155,4 +157,28 @@ fun <T> List<T>.moveLastToFirst(apply: Boolean = true): List<T> {
     if (this.isEmpty() || !apply) return this
     val last = this.last()
     return listOf(last) + this.dropLast(1)
+}
+
+suspend fun downloadImage(directory: FileSystemDirectoryHandle?, image: String, imageId: String) {
+    val dir = directory ?: throw IllegalStateException("Directory not selected")
+    val response = window.fetch(image).await()
+    val blob = response.blob().await()
+
+    val ext = when (blob.type) {
+        "image/png" -> "png"
+        "image/jpeg" -> "jpg"
+        "image/svg+xml" -> "svg"
+        ".png" -> "png"
+        ".jpg" -> "jpg"
+        ".jpeg" -> "jpg"
+        ".svg" -> "svg"
+        else -> "bin"
+    }
+
+    val fileName = "$imageId.$ext"
+
+    val fileHandle = dir.getFileHandle(fileName, js("{create: true}")).await()
+    val writable = fileHandle.createWritable().await()
+    writable.write(blob)
+    writable.close()
 }

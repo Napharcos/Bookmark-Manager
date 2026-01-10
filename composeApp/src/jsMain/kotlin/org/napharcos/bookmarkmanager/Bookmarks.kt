@@ -5,8 +5,6 @@ package org.napharcos.bookmarkmanager
 import kotlin.js.Date
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
-import kotlin.time.Instant
-import kotlin.time.toJSDate
 import kotlin.time.toKotlinInstant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -39,6 +37,7 @@ external interface Bookmarks {
     var imageId: String
     var image: String
     var undoTrash: String
+    //var changed: Boolean
 }
 
 @OptIn(ExperimentalUuidApi::class, ExperimentalTime::class)
@@ -53,6 +52,7 @@ fun Bookmark(
     imageId: String,
     image: String,
     undoTrash: String = "",
+    //changed: Boolean = true
 ): Bookmarks {
     val bookmark = js("{}").unsafeCast<Bookmarks>()
     bookmark.uuid = uuid
@@ -65,6 +65,7 @@ fun Bookmark(
     bookmark.imageId = imageId
     bookmark.image = image
     bookmark.undoTrash = undoTrash
+    //bookmark.changed = changed
     return bookmark
 }
 
@@ -79,6 +80,7 @@ fun Bookmarks.copy(
     imageId: String = this.imageId,
     image: String = this.image,
     undoTrash: String = this.undoTrash,
+    //changed: Boolean = this.changed
 ): Bookmarks {
     return Bookmark(
         uuid = uuid,
@@ -90,7 +92,8 @@ fun Bookmarks.copy(
         index = index,
         imageId = imageId,
         image = image,
-        undoTrash = undoTrash
+        undoTrash = undoTrash,
+        //changed = changed
     )
 }
 

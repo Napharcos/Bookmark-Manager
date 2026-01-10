@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.newCoroutineContext
 import kotlinx.coroutines.withContext
 import org.napharcos.bookmarkmanager.ExportManager
 import org.napharcos.bookmarkmanager.container.Container
@@ -49,6 +50,14 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
                     textColor = window.localStorage[Constants.TEXT_COLOR]?.toInt() ?: it.textColor,
                     cardSize = window.localStorage[Constants.CARD_SIZE]?.toInt() ?: it.cardSize
                 )
+            }
+            AppScope.scope.launch {
+                val backupDir = container.browserDatabase.getBackupDir(this)
+
+                if (backupDir == null || !backupDir.isValid()) {
+                    _uiState.update { it.copy(showingAddBackupFolderDialog = true) }
+                }
+                BackupManager.initBackupFolder(container.browserDatabase, backupDir)
             }
         }
 
@@ -98,6 +107,7 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
             )
 
             container.browserDatabase.addBookmark(newBookmark)
+            BackupManager.pushChanges(newBookmark)
 
             if (!uiState.value.openFolders.contains(parent))
                 onNavElementFoldClick(parent)
@@ -117,6 +127,7 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
             val updatedBookmark = bookmark.copy(name = name)
 
             container.browserDatabase.addBookmark(updatedBookmark, true)
+            BackupManager.pushChanges(updatedBookmark)
 
             _uiState.update {
                 it.copy(
@@ -168,6 +179,7 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
                 )
 
                 container.browserDatabase.addBookmark(bookmark, true)
+                BackupManager.pushChanges(bookmark)
 
                 window.localStorage[Constants.LAST_FOLDER] = parent
             }
@@ -417,6 +429,7 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
             )
 
             container.browserDatabase.addBookmark(newBookmark)
+            BackupManager.pushChanges(newBookmark)
             reloadData()
             updateShowingNewElement(false)
         }
@@ -433,6 +446,7 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
             )
 
             container.browserDatabase.addBookmark(newBookmark, true)
+            BackupManager.pushChanges(newBookmark)
             reloadData()
             updateEditElement(null)
         }
@@ -467,6 +481,7 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
             newOrder.forEachIndexed { i, item ->
                 val newBookmark = item.copy(index = i)
                 container.browserDatabase.addBookmark(newBookmark, true)
+                BackupManager.pushChanges(newBookmark)
             }
             reloadData()
         }
@@ -492,6 +507,7 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
                 }
 
                 container.browserDatabase.addBookmark(newBookmark, override = true)
+                BackupManager.pushChanges(newBookmark)
 
                 nextIndex++
             }

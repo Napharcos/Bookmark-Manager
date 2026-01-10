@@ -217,6 +217,7 @@ class ImportManager(
         )
 
         browserDBRepository.addBookmark(newBookmark, override)
+        BackupManager.pushChanges(newBookmark)
 
         return nextIndex + 1
     }
@@ -253,6 +254,7 @@ class ImportManager(
             loadingText = getString(Values.LOADING_UPDATE_BOOKMARK, bookmark.name)
 
             browserDBRepository.updateImage(scope, bookmark.uuid, "data:image/jpeg;base64,$image")
+            BackupManager.backupImage("data:image/jpeg;base64,$image", bookmark.imageId)
         }
     }
 
@@ -340,6 +342,7 @@ class ImportManager(
                     val base64 = reader.result as? String ?: ""
 
                     browserDBRepository.updateImage(this, bookmark.uuid, base64)
+                    BackupManager.backupImage(base64, bookmark.imageId)
                 }
                 result.complete(Unit)
             }

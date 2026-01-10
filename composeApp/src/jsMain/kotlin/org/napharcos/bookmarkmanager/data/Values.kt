@@ -63,4 +63,6 @@ object Values {
     const val DELETE_DB = "delete_db"
     const val DELETE_DB_CONFIRM_TEXT = "delete_db_confirm_text"
     const val CLIPBOARD = "clipboard"
+    const val ADD_BACKUP_TITLE = "add_backup_title"
+    const val ADD_BACKUP_TEXT = "add_backup_text"
 }

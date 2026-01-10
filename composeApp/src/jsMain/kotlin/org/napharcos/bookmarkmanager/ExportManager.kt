@@ -7,7 +7,6 @@ import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.await
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import org.napharcos.bookmarkmanager.data.Constants
@@ -46,30 +45,6 @@ class ExportManager(private val database: DatabaseRepository) {
         }
     }
 
-    suspend fun downloadImage(image: String, imageId: String) {
-        val dir = directory ?: throw IllegalStateException("Directory not selected")
-        val response = window.fetch(image).await()
-        val blob = response.blob().await()
-
-        val ext = when (blob.type) {
-            "image/png" -> "png"
-            "image/jpeg" -> "jpg"
-            "image/svg+xml" -> "svg"
-            ".png" -> "png"
-            ".jpg" -> "jpg"
-            ".jpeg" -> "jpg"
-            ".svg" -> "svg"
-            else -> "bin"
-        }
-
-        val fileName = "$imageId.$ext"
-
-        val fileHandle = dir.getFileHandle(fileName, js("{create: true}")).await()
-        val writable = fileHandle.createWritable().await()
-        writable.write(blob)
-        writable.close()
-    }
-
     private suspend fun manageImages(scope: CoroutineScope, parent: String) {
         val childs = database.getChilds(scope, parent)
 
@@ -80,7 +55,7 @@ class ExportManager(private val database: DatabaseRepository) {
             loadingText = getString(Values.PROCESSING_ELEMENT, it.name)
 
             if (it.imageId.isNotEmpty() && it.image.isNotEmpty())
-                downloadImage(it.image, it.imageId)
+                downloadImage(directory, it.image, it.imageId)
         }
     }
 
@@ -109,7 +84,7 @@ class ExportManager(private val database: DatabaseRepository) {
     }
 
     @OptIn(ExperimentalUuidApi::class, ExperimentalTime::class)
-    private suspend fun createBookmarksText(scope: CoroutineScope): String {
+    suspend fun createBookmarksText(scope: CoroutineScope): String {
         val bookmarkBar = buildBookmarkTree(scope, "")
         val trashContent = buildBookmarkTree(scope, Constants.TRASH)
 

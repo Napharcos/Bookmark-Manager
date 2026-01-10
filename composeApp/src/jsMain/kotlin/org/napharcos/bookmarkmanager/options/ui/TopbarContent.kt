@@ -141,6 +141,9 @@ fun RightElements(
     viewModel: ViewModel,
     uiState: UiState
 ) {
+    Div {
+
+    }
     Div(
         attrs = {
             style {

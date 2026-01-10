@@ -1,6 +1,7 @@
 package org.napharcos.bookmarkmanager.options.ui
 
 import androidx.compose.runtime.Composable
+import org.napharcos.bookmarkmanager.BackupManager
 import org.napharcos.bookmarkmanager.ExportManager
 import org.napharcos.bookmarkmanager.ImportManager
 import org.napharcos.bookmarkmanager.UiState
@@ -17,6 +18,13 @@ fun DialogSummary(
     container: Container
 ) {
     when {
+        uiState.showingAddBackupFolderDialog ->
+            InfoDialog(
+                title = Values.ADD_BACKUP_TITLE,
+                text = Values.ADD_BACKUP_TEXT,
+                onConfirm = { BackupManager.changeBackupFolder() }
+            )
+
         uiState.showingChangeBackgroundDialog ->
             ChangeBackgroundDialog(
                 viewModel = viewModel,

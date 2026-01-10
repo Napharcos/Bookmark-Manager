@@ -3,6 +3,7 @@ package org.napharcos.bookmarkmanager.database
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import org.napharcos.bookmarkmanager.Bookmarks
+import org.napharcos.bookmarkmanager.FileSystemDirectoryHandle
 
 interface DatabaseRepository {
 
@@ -24,4 +25,12 @@ interface DatabaseRepository {
     suspend fun getBookmarkByImage(scope: CoroutineScope, imageId: String): Bookmarks?
 
     suspend fun getBookmarkByUrl(scope: CoroutineScope, url: String): Bookmarks?
+
+    suspend fun getBackupDir(scope: CoroutineScope): FileSystemDirectoryHandle?
+
+    fun saveBackupDir(dir: FileSystemDirectoryHandle)
+
+    //suspend fun getChangedData(scope: CoroutineScope): List<Bookmarks>
+
+    //suspend fun updateChanged(scope: CoroutineScope, uuid: String)
 }
