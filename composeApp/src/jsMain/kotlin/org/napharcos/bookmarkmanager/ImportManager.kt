@@ -109,31 +109,37 @@ class ImportManager(
                 val data = reader.result as? String ?: ""
                 val json = Json { ignoreUnknownKeys = true }
                 val bookmarks = json.decodeFromString<BookmarkJson>(data)
-                val rootFolders = mutableListOf<BookmarkData>()
 
-                if (bookmarks.roots.bookmark_bar.guid != Constants.ROOT_ID)
-                    bookmarks.roots.bookmark_bar.let { if (it.children.isNotEmpty()) rootFolders.add(it) }
-                else bookmarks.roots.bookmark_bar.children.forEach { rootFolders.add(it) }
-                bookmarks.roots.other.let { if (it.children.isNotEmpty()) rootFolders.add(it) }
-                bookmarks.roots.synced.let { if (it.children.isNotEmpty()) rootFolders.add(it) }
-                bookmarks.roots.custom_root?.userRoot?.let { if (it.children.isNotEmpty()) rootFolders.add(it) }
-                bookmarks.roots.custom_root?.speedDial?.let { if (it.children.isNotEmpty()) rootFolders.add(it) }
-                bookmarks.roots.custom_root?.unsorted?.let { if (it.children.isNotEmpty()) rootFolders.add(it) }
-                bookmarks.roots.custom_root?.unsyncedPinboard?.let { if (it.children.isNotEmpty()) rootFolders.add(it) }
-
-                rootFolders.addBookmarks(this, "")
-
-                bookmarks.roots.trash?.children?.addBookmarks(this, Constants.TRASH)
-                bookmarks.roots.custom_root?.trash?.children?.addBookmarks(this, Constants.TRASH)
-
-                manageDuplicateUrl = null
-                manageDuplicateUuid = null
-                isLoading = false
-                loadingText = ""
+                readBookmarksHelper(this, bookmarks)
             }
         }
 
         reader.readAsText(this)
+    }
+
+    suspend fun readBookmarksHelper(scope: CoroutineScope, bookmarks: BookmarkJson) {
+        isLoading = true
+        val rootFolders = mutableListOf<BookmarkData>()
+
+        if (bookmarks.roots.bookmark_bar.guid != Constants.ROOT_ID)
+            bookmarks.roots.bookmark_bar.let { if (it.children.isNotEmpty()) rootFolders.add(it) }
+        else bookmarks.roots.bookmark_bar.children.forEach { rootFolders.add(it) }
+        bookmarks.roots.other.let { if (it.children.isNotEmpty()) rootFolders.add(it) }
+        bookmarks.roots.synced.let { if (it.children.isNotEmpty()) rootFolders.add(it) }
+        bookmarks.roots.custom_root?.userRoot?.let { if (it.children.isNotEmpty()) rootFolders.add(it) }
+        bookmarks.roots.custom_root?.speedDial?.let { if (it.children.isNotEmpty()) rootFolders.add(it) }
+        bookmarks.roots.custom_root?.unsorted?.let { if (it.children.isNotEmpty()) rootFolders.add(it) }
+        bookmarks.roots.custom_root?.unsyncedPinboard?.let { if (it.children.isNotEmpty()) rootFolders.add(it) }
+
+        rootFolders.addBookmarks(scope, "")
+
+        bookmarks.roots.trash?.children?.addBookmarks(scope, Constants.TRASH)
+        bookmarks.roots.custom_root?.trash?.children?.addBookmarks(scope, Constants.TRASH)
+
+        manageDuplicateUrl = null
+        manageDuplicateUuid = null
+        isLoading = false
+        loadingText = ""
     }
 
     private suspend fun List<BookmarkData>.addBookmarks(scope: CoroutineScope, parentId: String) {
@@ -350,6 +356,7 @@ class ImportManager(
 
         reader.onerror = {
             console.warn("Failed to read file: ${this.name}")
+            result.complete(Unit)
         }
 
         reader.readAsDataURL(this)

@@ -29,9 +29,9 @@ class ExportManager(private val database: DatabaseRepository) {
 
     private var directory: FileSystemDirectoryHandle? = null
 
-    fun exportVivaldiImages() {
+    fun exportVivaldiImages(dir: FileSystemDirectoryHandle? = null) {
         AppScope.scope.launch {
-            directory = showDirectoryPicker().await()
+            directory = dir ?: showDirectoryPicker().await()
 
             isLoading = true
             loadingText = ""

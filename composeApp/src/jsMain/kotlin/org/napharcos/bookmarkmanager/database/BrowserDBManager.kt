@@ -52,22 +52,6 @@ class BrowserDBManager(): DatabaseRepository {
 
                     if (old < 2) {
                         db.createObjectStore(SETTINGS_TABLE_NAME, KeyPath("key"))
-
-//                        val bookmarksStore = objectStore(BOOKMARKS_TABLE_NAME)
-//                        bookmarksStore.createIndex("changed", KeyPath("changed"), false)
-//
-//                        db.writeTransaction(BOOKMARKS_TABLE_NAME) {
-//                            val store = objectStore(BOOKMARKS_TABLE_NAME)
-//                            val cursor = store.openCursor(autoContinue = true)
-//
-//                            cursor.collect {
-//                                val value = it.value.asDynamic()
-//                                if (value.changed == undefined) {
-//                                    value.changed = true
-//                                    it.update(value)
-//                                }
-//                            }
-//                        }
                     }
                 }
             }
@@ -235,40 +219,32 @@ class BrowserDBManager(): DatabaseRepository {
         }
     }
 
-//    override suspend fun getChangedData(scope: CoroutineScope): List<Bookmarks> {
-//        val database = getDatabase(scope).await()
-//
-//        return database.transaction(BOOKMARKS_TABLE_NAME) {
-//            val results = mutableListOf<Bookmarks>()
-//
-//            val cursor = objectStore(BOOKMARKS_TABLE_NAME)
-//                .index("changed")
-//                .openCursor(query = Key(true), autoContinue = true)
-//
-//            cursor.collect {
-//                results.add(it.value.unsafeCast<Bookmarks>())
-//            }
-//
-//            results
-//        }
-//    }
-//
-//    override suspend fun updateChanged(scope: CoroutineScope, uuid: String) {
-//        val db = getDatabase(scope).await()
-//
-//        db.writeTransaction(SETTINGS_TABLE_NAME) {
-//            val store = objectStore(BOOKMARKS_TABLE_NAME)
-//            val existing = store.get(Key(uuid))
-//                ?.unsafeCast<Bookmarks>()
-//
-//            if (existing != null) {
-//                existing.asDynamic().changed = false
-//                store.put(existing)
-//            } else {
-//                console.warn("No record found: $uuid")
-//            }
-//        }
-//    }
+    override suspend fun getBackupFiles(scope: CoroutineScope): String {
+        val database = getDatabase(scope).await()
+
+        return database.transaction(SETTINGS_TABLE_NAME) {
+            objectStore(SETTINGS_TABLE_NAME)
+                .get(Key("backupFiles"))
+                ?.unsafeCast<dynamic>()?.value as? String ?: ""
+        }
+    }
+
+    override fun saveBackupFiles(fileNames: String) {
+        AppScope.scope.launch {
+            val database = getDatabase(this).await()
+
+            database.writeTransaction(SETTINGS_TABLE_NAME) {
+                val store = objectStore(SETTINGS_TABLE_NAME)
+
+                val js = js("{}").unsafeCast<dynamic>()
+                js.key = "backupFiles"
+                js.value = fileNames
+
+                store.put(js)
+            }
+        }
+    }
+
 
     object ConsoleLogger: Logger {
         override fun log(type: Type, event: Event?, message: () -> String) { console.log(message) }

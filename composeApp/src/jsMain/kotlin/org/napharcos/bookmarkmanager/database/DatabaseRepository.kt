@@ -30,7 +30,7 @@ interface DatabaseRepository {
 
     fun saveBackupDir(dir: FileSystemDirectoryHandle)
 
-    //suspend fun getChangedData(scope: CoroutineScope): List<Bookmarks>
+    suspend fun getBackupFiles(scope: CoroutineScope): String
 
-    //suspend fun updateChanged(scope: CoroutineScope, uuid: String)
+    fun saveBackupFiles(fileNames: String)
 }

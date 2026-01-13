@@ -94,7 +94,7 @@ fun InfoDialog(
                         }
                     }
                 ) {
-                    Text(text)
+                    Text(getString(text))
                 }
             }
             Button(

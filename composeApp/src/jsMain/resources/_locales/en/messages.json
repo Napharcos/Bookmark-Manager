@@ -190,5 +190,11 @@
   },
   "clipboard": {
     "message": "Clipboard"
+  },
+  "add_backup_title": {
+    "message": "Backup"
+  },
+  "add_backup_text": {
+    "message": "To ensure the safety of your data, please select a folder for the backup. It is recommended to create a new folder."
   }
 }

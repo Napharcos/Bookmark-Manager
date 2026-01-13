@@ -14,7 +14,7 @@ data class UiState(
     val showingChangeBackgroundDialog: Boolean = false,
     val showingImportBookmarksDialog: Boolean = false,
     val showingExportBookmarksDialog: Boolean = false,
-    val showindAddNewElementDialog: Boolean = false,
+    val showingAddNewElementDialog: Boolean = false,
     val showingClearTrashDialog: Boolean = false,
     val showingDeleteDBDialog: Boolean = false,
     val showingAddBackupFolderDialog: Boolean = false,

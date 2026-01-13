@@ -4,17 +4,11 @@ import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.await
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.newCoroutineContext
-import kotlinx.coroutines.withContext
-import org.napharcos.bookmarkmanager.ExportManager
 import org.napharcos.bookmarkmanager.container.Container
 import org.napharcos.bookmarkmanager.data.Constants
 import org.napharcos.bookmarkmanager.data.Values
@@ -51,21 +45,29 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
                     cardSize = window.localStorage[Constants.CARD_SIZE]?.toInt() ?: it.cardSize
                 )
             }
-            AppScope.scope.launch {
-                val backupDir = container.browserDatabase.getBackupDir(this)
 
-                if (backupDir == null || !backupDir.isValid()) {
-                    _uiState.update { it.copy(showingAddBackupFolderDialog = true) }
-                }
-                BackupManager.initBackupFolder(container.browserDatabase, backupDir)
-            }
         }
 
         AppScope.scope.launch {
-            val childs = container.browserDatabase.getSpecificFolders(this, "")
+            var showDialog = false
+            val backupDir = if (isOpera) null else container.browserDatabase.getBackupDir(this)
+
+            if (!popup)
+                showDialog = try {
+                    backupDir == null || !backupDir.isWritable() || !backupDir.testWriteAccess()
+                } catch (_: Throwable) { true }
+
+            if (showDialog)
+                _uiState.update { it.copy(showingAddBackupFolderDialog = true) }
+
+            BackupManager.initBackupFolder(container.browserDatabase, backupDir)
+        }
+
+        AppScope.scope.launch {
+            val children = container.browserDatabase.getSpecificFolders(this, "")
             val newFolders = mutableListOf<Bookmarks>()
 
-            childs.forEach {
+            children.forEach {
                 newFolders.add(it)
                 newFolders.addAll(container.browserDatabase.getSpecificFolders(this, it.uuid))
             }
@@ -162,6 +164,7 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
             val parent = uiState.value.selectedFolder
             val pageData = uiState.value.pageData
             val bookmarkData = pageData?.url?.let { container.browserDatabase.getBookmarkByUrl(this, it) }
+            val imageId = if (image != bookmarkData?.image) Uuid.random().toHexString() else bookmarkData.imageId
 
             if (image != bookmarkData?.image || parent != bookmarkData.parentId) {
                 val bookmark = bookmarkData?.copy(
@@ -180,6 +183,8 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
 
                 container.browserDatabase.addBookmark(bookmark, true)
                 BackupManager.pushChanges(bookmark)
+                if (image != bookmarkData?.image)
+                    BackupManager.backupImage(image, imageId)
 
                 window.localStorage[Constants.LAST_FOLDER] = parent
             }
@@ -327,7 +332,7 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
 
     fun updateShowingNewElement(showing: Boolean) {
         _uiState.update {
-            it.copy(showindAddNewElementDialog = showing)
+            it.copy(showingAddNewElementDialog = showing)
         }
     }
 
@@ -371,6 +376,13 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
             )
         }
         window.localStorage[Constants.BACKGROUND] = image
+    }
+
+    fun onAddBackupFolderConfirmClick() {
+        BackupManager.changeBackupFolder { reloadData() }
+        _uiState.update {
+            it.copy(showingAddBackupFolderDialog = false)
+        }
     }
 
     fun clearTrash() {
@@ -417,6 +429,7 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
     fun onAddNewElementConfirmClick(type: String, name: String, url: String, image: String) {
         AppScope.scope.launch {
             val parent = uiState.value.selectedFolder
+            val imageId = if (image.isNotEmpty()) Uuid.random().toHexString() else ""
 
             val newBookmark = Bookmark(
                 parentId = parent,
@@ -424,12 +437,15 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
                 type = type,
                 url = url,
                 index = getNextIndex(this, parent),
-                imageId = if (image.isNotEmpty()) Uuid.random().toHexString() else "",
+                imageId = imageId,
                 image = if (image.isEmpty() && type == Constants.FOLDER) "./folder.svg" else image
             )
 
             container.browserDatabase.addBookmark(newBookmark)
             BackupManager.pushChanges(newBookmark)
+            if (image.isNotEmpty())
+                BackupManager.backupImage(image, imageId)
+
             reloadData()
             updateShowingNewElement(false)
         }
@@ -438,15 +454,20 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
     @OptIn(ExperimentalUuidApi::class)
     fun onEditConfirmClick(bookmark: Bookmarks, name: String, url: String, image: String) {
         AppScope.scope.launch {
+            val imageId = if (image != bookmark.image) Uuid.random().toHexString() else bookmark.imageId
+
             val newBookmark = bookmark.copy(
                 name = name.ifEmpty { bookmark.name },
                 url = url.ifEmpty { bookmark.url },
-                imageId = if (image.isNotEmpty()) Uuid.random().toHexString() else bookmark.imageId,
+                imageId = imageId,
                 image = image.ifEmpty { bookmark.image }
             )
 
             container.browserDatabase.addBookmark(newBookmark, true)
             BackupManager.pushChanges(newBookmark)
+            if (image != bookmark.image)
+                BackupManager.backupImage(image, imageId)
+
             reloadData()
             updateEditElement(null)
         }

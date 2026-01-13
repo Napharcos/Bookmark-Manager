@@ -1,6 +1,7 @@
 package org.napharcos.bookmarkmanager.options.ui
 
 import androidx.compose.runtime.Composable
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.max
 import org.jetbrains.compose.web.attributes.min
@@ -9,6 +10,8 @@ import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Text
+import org.napharcos.bookmarkmanager.AppScope
+import org.napharcos.bookmarkmanager.BackupManager
 import org.napharcos.bookmarkmanager.UiState
 import org.napharcos.bookmarkmanager.ViewModel
 import org.napharcos.bookmarkmanager.data.Constants
@@ -141,9 +144,6 @@ fun RightElements(
     viewModel: ViewModel,
     uiState: UiState
 ) {
-    Div {
-
-    }
     Div(
         attrs = {
             style {

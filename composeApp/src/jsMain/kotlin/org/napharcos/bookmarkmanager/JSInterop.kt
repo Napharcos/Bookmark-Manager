@@ -2,6 +2,7 @@ package org.napharcos.bookmarkmanager
 
 import kotlinx.coroutines.await
 import org.khronos.webgl.Uint8Array
+import org.w3c.files.File
 import kotlin.js.Promise
 
 external class TextDecoder(encoding: String = definedExternally) {
@@ -10,12 +11,6 @@ external class TextDecoder(encoding: String = definedExternally) {
 
 external interface ReadableStreamDefaultReader<T> {
     fun read(): dynamic
-    fun releaseLock()
-}
-
-external interface ReadResult<T> {
-    val done: Boolean
-    val value: T
 }
 
 external interface ReadableStream<T> {
@@ -28,13 +23,20 @@ external interface Blob {
 
 external interface FileSystemWritableFileStream {
     fun write(data: dynamic): Promise<Unit>
+    fun seek(position: Int): Promise<Unit>
     fun close(): Promise<Unit>
 }
 
 external interface FileSystemHandle {
-    val kind: String
     val name: String
-    fun isSameEntry(other: FileSystemHandle): Promise<Boolean>
+
+    fun queryPermission(
+        descriptor: FileSystemHandlePermissionDescriptor = definedExternally
+    ): Promise<String>
+
+    fun requestPermission(
+        descriptor: FileSystemHandlePermissionDescriptor = definedExternally
+    ): Promise<String> /* "granted" | "denied" */
 }
 
 
@@ -42,6 +44,7 @@ external interface FileSystemFileHandle : FileSystemHandle {
     fun createWritable(): Promise<dynamic>
     fun createWritable(options: dynamic): Promise<FileSystemWritableFileStream>
     fun remove(): Promise<Unit>
+    fun getFile(): Promise<File>
 }
 
 external interface FileSystemDirectoryHandle : FileSystemFileHandle {
@@ -50,56 +53,74 @@ external interface FileSystemDirectoryHandle : FileSystemFileHandle {
     fun getDirectoryHandle(name: String, options: dynamic = definedExternally): Promise<FileSystemDirectoryHandle>
 
     fun removeEntry(name: String, options: dynamic = definedExternally): Promise<Unit>
+    fun values(): dynamic
+}
 
-    fun resolve(possibleDescendant: FileSystemHandle): Promise<Array<String>?>
-
-    fun keys(): Promise<Array<String>>
-
-    fun values(): Promise<Array<FileSystemHandle>>
-
-    fun entries(): Promise<Array<Array<dynamic>>>
-
-    @JsName("values")
-    fun valuesIterator(): dynamic
+external interface FileSystemHandlePermissionDescriptor {
+    var mode: String?
 }
 
 external fun showDirectoryPicker(): Promise<FileSystemDirectoryHandle>
 
-suspend fun FileSystemFileHandle.deleteFile() {
-    this.remove().await()
-}
+private val asyncIteratorSymbol: dynamic = js("Symbol.asyncIterator")
 
-fun FileSystemDirectoryHandle.listFiles(): List<FileSystemFileHandle> {
+suspend fun FileSystemDirectoryHandle.listFiles(): List<FileSystemFileHandle> {
     val files = mutableListOf<FileSystemFileHandle>()
-    val iterator = this.valuesIterator()
-    var result = iterator.next()
-    while (!result.done as Boolean) {
+
+    val iterable = values()
+    val iterator = iterable[asyncIteratorSymbol]()
+
+    while (true) {
+        val result = iterator.next().unsafeCast<Promise<dynamic>>().await()
+        if (result.done as Boolean) break
+
         val handle = result.value
-        if ((handle.asDynamic()).kind == "file") {
+        if (handle != null && handle.kind == "file") {
             files.add(handle.unsafeCast<FileSystemFileHandle>())
         }
-        result = iterator.next()
     }
+
     return files
 }
 
-suspend fun FileSystemDirectoryHandle.existsFolder(name: String): Boolean {
-    return try {
-        this.getDirectoryHandle(name, js("{ create: false }")).await()
-        true
-    } catch (_: Throwable) { false }
+
+suspend fun FileSystemDirectoryHandle.writeFile(
+    name: String,
+    content: String,
+    keep: Boolean = false
+) {
+    val fileHandle = getFileHandle(name, js("{ create: true }")).await()
+
+    val writable = if (keep) fileHandle.createWritable(js("{ keepExistingData: true }")).await()
+        else fileHandle.createWritable().await()
+
+    if (keep) {
+        val file = fileHandle.getFile().await()
+        writable.seek(file.size.toInt())
+    }
+
+    (writable.write(content) as Promise<Unit>).await()
+    (writable.close() as Promise<Unit>).await()
 }
 
-suspend fun FileSystemDirectoryHandle.writeFile(name: String, content: String, keep: Boolean) {
-    val fileHandle = this.getFileHandle(name, js("{ create: true }")).await()
-    val writable = if (keep) fileHandle.createWritable(js("{ keepExistingData: true }")).await() else fileHandle.createWritable().await()
-    writable.write(content).await()
-    writable.close().await()
+suspend fun FileSystemDirectoryHandle.isWritable(): Boolean {
+    val permission = this.requestPermission(js("{ mode: 'readwrite' }")).await()
+    return permission == "granted"
 }
 
-suspend fun FileSystemDirectoryHandle.isValid(): Boolean {
+suspend fun FileSystemDirectoryHandle.testWriteAccess(): Boolean {
     return try {
-        values().await()
+        writeFile("TEST", "TEST")
+        removeEntry("TEST").await()
         true
-    } catch (_: Throwable) { false }
+    } catch (_: Throwable) {
+        false
+    }
+}
+
+val isOpera = isOpera()
+
+fun isOpera(): Boolean {
+    val ua = js("navigator.userAgent") as String
+    return ua.contains("OPR/") || ua.contains("Opera")
 }

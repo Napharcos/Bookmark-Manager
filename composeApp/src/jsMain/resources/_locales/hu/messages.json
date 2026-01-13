@@ -190,5 +190,11 @@
   },
   "clipboard": {
     "message": "Vágólap"
+  },
+  "add_backup_title": {
+    "message": "Biztonsági másolat"
+  },
+  "add_backup_text": {
+    "message": "Az adatai biztonsága érdekében válaszon egy mappát, a biztonsági másolathoz. Ajánlott új mappát létrehozni."
   }
 }
