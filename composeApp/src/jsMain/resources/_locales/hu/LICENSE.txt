@@ -1,0 +1,7 @@
+Szerzői jog © 2025-2026 Napharcos. Minden jog fenntartva.
+
+A szoftver személyes vagy nem kereskedelmi célú használata engedélyezett, azonban a másolás, terjesztés, módosítás vagy származékos művek létrehozása az eredeti szerző kifejezett engedélye nélkül tilos.
+
+A szoftver forráskódja az átláthatóság és a megbízhatóság biztosítása érdekében nyilvánosan elérhető. A forráskód bármilyen felhasználása azonban ezen licenc feltételeinek hatálya alá tartozik.
+
+Minden egyéb felhasználáshoz a szerző kifejezett engedélye szükséges.

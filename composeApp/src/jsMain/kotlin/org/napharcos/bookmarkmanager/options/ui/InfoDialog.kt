@@ -27,6 +27,7 @@ import org.jetbrains.compose.web.css.width
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H3
+import org.jetbrains.compose.web.dom.Iframe
 import org.jetbrains.compose.web.dom.Text
 import org.napharcos.bookmarkmanager.data.Values
 import org.napharcos.bookmarkmanager.dialogBackground
@@ -36,14 +37,18 @@ import org.napharcos.bookmarkmanager.getString
 fun InfoDialog(
     title: String,
     text: String,
-    onConfirm: () -> Unit
+    file: String?,
+    height: Int = 250,
+    onCancel: () -> Unit = {},
+    onConfirm: () -> Unit,
+    content: (@Composable () -> Unit)? = null
 ) {
     var cancelEntered by remember { mutableStateOf(false) }
 
     Div(
         attrs = {
             style { dialogBackground() }
-            onClick {}
+            onClick { onCancel() }
         }
     ) {
         Div(
@@ -56,7 +61,7 @@ fun InfoDialog(
                     borderRadius(12.px)
                     padding(8.px)
                     width(450.px)
-                    height(250.px)
+                    height(height.px)
                     textAlign("center")
                     property("box-shadow", "rgba(0, 0, 0, 0.3) 0px 4px 12px")
                 }
@@ -88,13 +93,22 @@ fun InfoDialog(
                     attrs = {
                         style {
                             width(100.percent)
-                            padding(4.px)
+                            if (file == null) padding(4.px)
                             fontSize(1.1.em)
                             textAlign("center")
                         }
                     }
                 ) {
-                    Text(getString(text))
+                    content?.invoke() ?: file?.let {
+                        Iframe(attrs = {
+                            style {
+                                width(425.px)
+                                fontSize(1.2.em)
+                                height(152.px)
+                            }
+                            attr("src", file)
+                        })
+                    } ?: Text(getString(text))
                 }
             }
             Button(

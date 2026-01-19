@@ -24,7 +24,7 @@
     "message": "Elements size: "
   },
   "darkened_background": {
-    "message": "Darkened background: "
+    "message": "Darkened background"
   },
   "loading_file": {
     "message": "Loading file..."
@@ -196,5 +196,17 @@
   },
   "add_backup_text": {
     "message": "To ensure the safety of your data, please select a folder for the backup. It is recommended to create a new folder."
+  },
+  "terms": {
+    "message": "Terms of use"
+  },
+  "libraries": {
+    "message": "About libraries"
+  },
+  "lang": {
+    "message": "en"
+  },
+  "change_backup_folder": {
+    "message": "Change backup folder"
   }
 }

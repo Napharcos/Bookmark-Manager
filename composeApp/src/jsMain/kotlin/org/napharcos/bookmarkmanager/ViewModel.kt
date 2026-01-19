@@ -385,6 +385,18 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
         }
     }
 
+    fun updateShowingTerms(showing: Boolean) {
+        _uiState.update {
+            it.copy(showingTermsDialog = showing)
+        }
+    }
+
+    fun updateShowingLibraries(showing: Boolean) {
+        _uiState.update {
+            it.copy(showingLibrariesDialog = showing)
+        }
+    }
+
     fun clearTrash() {
         AppScope.scope.launch {
             val browserTrashElements = container.browserDatabase.getChilds(this, Constants.TRASH)

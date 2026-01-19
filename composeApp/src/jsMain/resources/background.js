@@ -6,7 +6,7 @@ async function updateIconByUrl() {
     if (!tab || !tab.url) return
     const currentUrl = tab.url
 
-    const dbRequest = indexedDB.open(DB_NAME, 1)
+    const dbRequest = indexedDB.open(DB_NAME, 2)
 
     dbRequest.onupgradeneeded = event => {
         dbRequest.transaction.abort()

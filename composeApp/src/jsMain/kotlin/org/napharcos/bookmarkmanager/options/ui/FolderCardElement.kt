@@ -382,7 +382,11 @@ fun Card(
     }
 }
 
-fun StyleScope.iconButtonStyle(entered: Boolean, selected: Boolean): StyleScope {
+fun StyleScope.iconButtonStyle(
+    entered: Boolean = false,
+    selected: Boolean = false,
+    withColor: Boolean = true
+): StyleScope {
     return this.apply {
         width(25.px)
         height(25.px)
@@ -391,8 +395,8 @@ fun StyleScope.iconButtonStyle(entered: Boolean, selected: Boolean): StyleScope 
         justifyContent(JustifyContent.Center)
         alignItems(AlignItems.Center)
         cursor("pointer")
-        property("box-shadow", "0 4px 12px rgba(0,0,0,0.2)")
-        backgroundColor(if (entered) rgb(41, 182, 246) else if (selected) rgb(2, 119, 189) else rgb(230, 230, 230))
+        if (withColor) property("box-shadow", "0 4px 12px rgba(0,0,0,0.2)")
+        if (withColor) backgroundColor(if (entered) rgb(41, 182, 246) else if (selected) rgb(2, 119, 189) else rgb(230, 230, 230))
         padding(4.px)
         property("object-fit", "contain")
     }

@@ -1,6 +1,7 @@
 package org.napharcos.bookmarkmanager.options
 
 import androidx.compose.runtime.*
+import kotlinx.browser.document
 import kotlinx.browser.window
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Div
@@ -9,8 +10,8 @@ import org.napharcos.bookmarkmanager.container.ContainerImpl
 import org.napharcos.bookmarkmanager.options.ui.DialogSummary
 import org.napharcos.bookmarkmanager.options.ui.FolderElementsList
 import org.napharcos.bookmarkmanager.options.ui.NavRail
-import org.napharcos.bookmarkmanager.options.ui.TopbarContent
-import kotlin.math.roundToInt
+import org.napharcos.bookmarkmanager.options.ui.TopbarMain
+import org.w3c.dom.events.Event
 
 @Composable
 fun OptionsSummary() {
@@ -21,11 +22,25 @@ fun OptionsSummary() {
     var windowHeight by remember { mutableStateOf(window.innerHeight) }
     var windowWidth by remember { mutableStateOf(window.innerWidth) }
 
-    LaunchedEffect(Unit) {
-        window.addEventListener("resize", {
+    DisposableEffect(Unit) {
+        val resizeListener: (Event) -> Unit = {
             windowHeight = window.innerHeight
             windowWidth = window.innerWidth
-        })
+        }
+
+        val focusListener: (Event) -> Unit = {
+            val visible = !(document.asDynamic().hidden as Boolean)
+            if (visible)
+                viewModel.reloadData()
+        }
+
+        window.addEventListener("resize", resizeListener)
+        document.addEventListener("visibilitychange", focusListener)
+
+        onDispose {
+            window.removeEventListener("resize", resizeListener)
+            document.removeEventListener("visibilitychange", focusListener)
+        }
     }
 
     LaunchedEffect(ImportManager.isLoading) {
@@ -91,12 +106,12 @@ fun TopBar(
             style {
                 position(Position.Relative)
                 width(100.percent)
-                height(145.px)
+                height(96.px)
                 if (uiState.darkening) backgroundColor(rgba(50, 50, 50, 0.6))
             }
         }
     ) {
-        TopbarContent(uiState, viewModel)
+        TopbarMain(uiState, viewModel)
     }
 }
 

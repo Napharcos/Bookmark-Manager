@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.serialization)
+    alias(libs.plugins.aboutLibraries)
 }
 
 kotlin {
@@ -28,4 +29,10 @@ kotlin {
 
 tasks.withType<Copy> {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+aboutLibraries {
+    export {
+        outputFile = file("src/jsMain/resources/aboutlibraries.json")
+    }
 }

@@ -24,7 +24,7 @@
     "message": "Elemek mérete: "
   },
   "darkened_background": {
-    "message": "Sötétített háttér: "
+    "message": "Sötétített háttér"
   },
   "loading_file": {
     "message": "Fájl beolvasása..."
@@ -196,5 +196,17 @@
   },
   "add_backup_text": {
     "message": "Az adatai biztonsága érdekében válaszon egy mappát, a biztonsági másolathoz. Ajánlott új mappát létrehozni."
+  },
+  "terms": {
+    "message": "Felhaszálói feltételek"
+  },
+  "libraries": {
+    "message": "Könyvtárakról"
+  },
+  "lang": {
+    "message": "hu"
+  },
+  "change_backup_folder": {
+    "message": "Biztonsági másolat módosítása"
   }
 }

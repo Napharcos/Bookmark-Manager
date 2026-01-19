@@ -10,6 +10,7 @@ import org.jetbrains.compose.web.dom.*
 import org.napharcos.bookmarkmanager.*
 import org.napharcos.bookmarkmanager.container.ContainerImpl
 import org.napharcos.bookmarkmanager.data.Values
+import org.napharcos.bookmarkmanager.options.ui.trashIcon
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
 
@@ -372,7 +373,12 @@ fun BottomButtons(
                 onMouseLeave { onTrashEnter = false }
             }
         ) {
-            Img("trash.svg")
+            Div(attrs = {
+                ref {
+                    it.innerHTML = trashIcon("d3d3d3")
+                    onDispose { }
+                }
+            })
         }
         Button(
             attrs = {

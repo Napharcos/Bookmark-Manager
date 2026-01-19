@@ -131,22 +131,39 @@ fun ChangeBackgroundDialog(
                     ) {
                         Text(getString(Values.OR))
                     }
-                    Button(
-                        attrs = {
-                            style {
-                                width(120.px)
-                                marginTop(8.px)
-                            }
-                            onClick {
-                                if (image.startsWith("data:image"))
-                                    image = ""
-                                else AppScope.scope.launch {
-                                    image = viewModel.onBrowseImageClick()
+                    Div({
+                        style {
+                            display(DisplayStyle.Flex)
+                            flexDirection(FlexDirection.Row)
+                            justifyContent(JustifyContent.SpaceAround)
+                            width(100.percent)
+                        }
+                    }) {
+                        Button(
+                            attrs = {
+                                style {
+                                    width(120.px)
+                                }
+                                onClick {
+                                    if (image.startsWith("data:image"))
+                                        image = ""
+                                    else
+                                        AppScope.scope.launch { image = viewModel.onBrowseImageClick() }
                                 }
                             }
+                        ) {
+                            Text(getString(if (image.startsWith("data:image")) Values.REMOVE else Values.BROWSE))
                         }
-                    ) {
-                        Text(getString(if (image.startsWith("data:image")) Values.REMOVE else Values.BROWSE))
+                        Button(
+                            attrs = {
+                                style {
+                                    width(120.px)
+                                }
+                                onClick { AppScope.scope.launch { image = viewModel.onClipboardClick() } }
+                            }
+                        ) {
+                            Text(getString(Values.CLIPBOARD))
+                        }
                     }
                 }
             }

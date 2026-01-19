@@ -65,4 +65,8 @@ object Values {
     const val CLIPBOARD = "clipboard"
     const val ADD_BACKUP_TITLE = "add_backup_title"
     const val ADD_BACKUP_TEXT = "add_backup_text"
+    const val TERMS = "terms"
+    const val LIBRARIES = "libraries"
+    const val LANG = "lang"
+    const val CHANGE_BACKUP_FOLDER = "change_backup_folder"
 }

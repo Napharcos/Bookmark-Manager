@@ -21,8 +21,31 @@ fun DialogSummary(
             InfoDialog(
                 title = Values.ADD_BACKUP_TITLE,
                 text = Values.ADD_BACKUP_TEXT,
-                onConfirm = { viewModel.onAddBackupFolderConfirmClick() }
+                file = null,
+                onConfirm = { viewModel.onAddBackupFolderConfirmClick() },
             )
+
+        uiState.showingTermsDialog -> {
+            InfoDialog(
+                title = Values.TERMS,
+                text = "",
+                file = "./_locales/${getString(Values.LANG)}/LICENSE.txt",
+                onCancel = { viewModel.updateShowingTerms(false) },
+                onConfirm = { viewModel.updateShowingTerms(false) },
+            )
+        }
+
+        uiState.showingLibrariesDialog -> {
+            InfoDialog(
+                title = Values.LIBRARIES,
+                text = "",
+                file = null,
+                height = 600,
+                onCancel = { viewModel.updateShowingLibraries(false) },
+                onConfirm = { viewModel.updateShowingLibraries(false) },
+                content = { LibrariesDialogContent() }
+            )
+        }
 
         uiState.showingChangeBackgroundDialog ->
             ChangeBackgroundDialog(
