@@ -66,17 +66,15 @@ class BrowserDBManager: DatabaseRepository {
         deleteDatabase(DB_NAME, ConsoleLogger)
     }
 
-    override fun addBookmark(bookmark: Bookmarks, override: Boolean) {
-        AppScope.scope.launch {
-            val database = getDatabase(this).await()
+    override suspend fun addBookmark(scope: CoroutineScope, bookmark: Bookmarks, override: Boolean) {
+        val database = getDatabase(scope).await()
 
-            database.writeTransaction(BOOKMARKS_TABLE_NAME) {
-                val store = objectStore(BOOKMARKS_TABLE_NAME)
+        database.writeTransaction(BOOKMARKS_TABLE_NAME) {
+            val store = objectStore(BOOKMARKS_TABLE_NAME)
 
-                if (override)
-                    store.put(bookmark)
-                else store.add(bookmark)
-            }
+            if (override)
+                store.put(bookmark)
+            else store.add(bookmark)
         }
     }
 

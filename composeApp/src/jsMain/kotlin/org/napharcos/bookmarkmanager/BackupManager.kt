@@ -2,8 +2,10 @@ package org.napharcos.bookmarkmanager
 
 import kotlinx.browser.window
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.await
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -105,7 +107,7 @@ object BackupManager {
         val files = directory?.listFiles() ?: emptyList()
         val bookmarkFiles = files.filter { it.name.startsWith("Bookmarks - ") }.sortedBy { it.name }
         if (bookmarkFiles.isNotEmpty()) {
-            val lastFile = files.last().getFile().await()
+            val lastFile = bookmarkFiles.last().getFile().await()
             val text = (lastFile.asDynamic().text() as Promise<String>).await()
             val json = Json { ignoreUnknownKeys = true }
             var bookmarks = try { json.decodeFromString<BookmarkJson>(text) } catch (_: Throwable) { null }
@@ -137,26 +139,27 @@ object BackupManager {
 
         val changes = readChanges(bytes)
 
-        changes.forEach { c ->
+        for (c in changes) {
             val change = Json.decodeFromString<ChangesLogData>(c)
 
-            if (change.parentId != Constants.DELETED)
-                database.addBookmark(change.toBookmarks())
-            else database.deleteBookmark(scope, change.uuid)
+            try {
+                if (change.parentId != Constants.DELETED)
+                    database.addBookmark(scope, change.toBookmarks(), true)
+                else database.deleteBookmark(scope, change.uuid)
+            } catch (e: Throwable) {
+                console.error("Failed to add or delete bookmark: ${change.name}", e)
+            }
         }
 
         val acceptedFormats = listOf("png", "jpg", "jpeg", "svg")
         val images = filter { acceptedFormats.contains(it.name.substringAfter('.')) }
 
-        images.forEach { image ->
-            AppScope.scope.launch {
-                val id = image.name.substringBefore('.')
-                val img = image.getFile().await().readImage()
+        for (image in images) {
+            val id = image.name.substringBefore('.')
+            val img = image.getFile().await().readImage()
 
-                database.getBookmarkByImage(this, id)?.let {
-                    database.updateImage(this@launch, it.uuid, img)
-                }
-            }
+            val bookmark = database.getBookmarkByImage(scope, id)
+            bookmark?.let { database.updateImage(scope, it.uuid, img) }
         }
     }
 
@@ -265,6 +268,8 @@ object BackupManager {
     suspend fun verifyDir(): Boolean = fileSystemWriteAPI.verifyDir()
 
     suspend fun shutDown() = fileSystemWriteAPI.shutDown()
+
+    fun fastBackup() { changes.value = 100 }
 
     @Serializable
     data class ChangesLogData(

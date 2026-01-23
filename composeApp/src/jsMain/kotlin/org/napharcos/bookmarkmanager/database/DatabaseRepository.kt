@@ -7,7 +7,7 @@ import org.napharcos.bookmarkmanager.FileSystemDirectoryHandle
 interface DatabaseRepository {
 
     suspend fun deleteDB()
-    fun addBookmark(bookmark: Bookmarks, override: Boolean = false)
+    suspend fun addBookmark(scope: CoroutineScope, bookmark: Bookmarks, override: Boolean = false)
 
     suspend fun updateImage(coroutine: CoroutineScope, uuid: String, image: String)
 

@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import kotlinx.browser.document
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
@@ -136,6 +137,8 @@ class ImportManager(
         bookmarks.roots.trash?.children?.addBookmarks(scope, Constants.TRASH)
         bookmarks.roots.custom_root?.trash?.children?.addBookmarks(scope, Constants.TRASH)
 
+        BackupManager.fastBackup()
+
         manageDuplicateUrl = null
         manageDuplicateUuid = null
         isLoading = false
@@ -154,19 +157,19 @@ class ImportManager(
             val urlBookmark = if (it.url.isNotEmpty()) browserDBRepository.getBookmarkByUrl(scope, it.url) else null
 
             if (uuidBookmark == null && urlBookmark == null) {
-                nextIndex = addBookmark(it, parentId, nextIndex)
+                nextIndex = addBookmark(scope, it, parentId, nextIndex)
             } else if (uuidBookmark?.uuid == it.guid) {
                 val override = override(Type.UUID, parentId, it)
 
                 if (override == 1)
-                    nextIndex = addBookmark(it, parentId, nextIndex, true)
+                    nextIndex = addBookmark(scope, it, parentId, nextIndex, true)
                 else if (override == 2)
-                    nextIndex = addBookmark(it, parentId, nextIndex, newUUID = true)
+                    nextIndex = addBookmark(scope, it, parentId, nextIndex, newUUID = true)
             } else if (urlBookmark?.url == it.url) {
                 val override = override(Type.URL, parentId, it)
 
                 if (override == 1)
-                    nextIndex = addBookmark(it, parentId, nextIndex)
+                    nextIndex = addBookmark(scope, it, parentId, nextIndex)
             }
 
             it.children.addBookmarks(scope, it.guid)
@@ -196,6 +199,7 @@ class ImportManager(
 
     @OptIn(ExperimentalUuidApi::class)
     private suspend fun addBookmark(
+        scope: CoroutineScope,
         element: BookmarkData,
         parentId: String,
         nextIndex: Int,
@@ -222,8 +226,7 @@ class ImportManager(
             undoTrash = element.meta_info?.undoTrashParentId ?: ""
         )
 
-        browserDBRepository.addBookmark(newBookmark, override)
-        BackupManager.pushChanges(newBookmark)
+        browserDBRepository.addBookmark(scope, newBookmark, override)
 
         return nextIndex + 1
     }
@@ -264,6 +267,7 @@ class ImportManager(
         }
     }
 
+    @Suppress("UNCHECKED_CAST_TO_EXTERNAL_INTERFACE")
     fun importLargeJsonFile(file: File) {
         AppScope.scope.launch {
             isLoading = true

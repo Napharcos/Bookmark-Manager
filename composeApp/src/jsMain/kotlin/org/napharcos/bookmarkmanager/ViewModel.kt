@@ -110,7 +110,7 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
                 image = "./folder.svg"
             )
 
-            container.browserDatabase.addBookmark(newBookmark)
+            container.browserDatabase.addBookmark(this, newBookmark)
             BackupManager.pushChanges(newBookmark)
 
             if (!uiState.value.openFolders.contains(parent))
@@ -130,7 +130,7 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
         AppScope.scope.launch {
             val updatedBookmark = bookmark.copy(name = name)
 
-            container.browserDatabase.addBookmark(updatedBookmark, true)
+            container.browserDatabase.addBookmark(this, updatedBookmark, true)
             BackupManager.pushChanges(updatedBookmark)
 
             _uiState.update {
@@ -187,7 +187,7 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
                     url = pageData?.url ?: "",
                 )
 
-                container.browserDatabase.addBookmark(bookmark, true)
+                container.browserDatabase.addBookmark(this, bookmark, true)
                 BackupManager.pushChanges(bookmark)
                 if (image != bookmarkData?.image) {
                     bookmarkData?.let {
@@ -469,7 +469,7 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
                 image = if (image.isEmpty() && type == Constants.FOLDER) "./folder.svg" else image
             )
 
-            container.browserDatabase.addBookmark(newBookmark)
+            container.browserDatabase.addBookmark(this, newBookmark)
             BackupManager.pushChanges(newBookmark)
             if (image.isNotEmpty())
                 BackupManager.backupImage(image, imageId)
@@ -491,7 +491,7 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
                 image = image
             )
 
-            container.browserDatabase.addBookmark(newBookmark, true)
+            container.browserDatabase.addBookmark(this, newBookmark, true)
             BackupManager.pushChanges(newBookmark)
             if (image != bookmark.image) {
                 BackupManager.deleteImage(bookmark.image, bookmark.imageId)
@@ -531,7 +531,7 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
         AppScope.scope.launch {
             newOrder.forEachIndexed { i, item ->
                 val newBookmark = item.copy(index = i)
-                container.browserDatabase.addBookmark(newBookmark, true)
+                container.browserDatabase.addBookmark(this, newBookmark, true)
                 BackupManager.pushChanges(newBookmark)
             }
             reloadData()
@@ -557,7 +557,7 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
                     else -> it.copy(parentId = target, index = nextIndex)
                 }
 
-                container.browserDatabase.addBookmark(newBookmark, override = true)
+                container.browserDatabase.addBookmark(this, newBookmark, override = true)
                 BackupManager.pushChanges(newBookmark)
 
                 nextIndex++
