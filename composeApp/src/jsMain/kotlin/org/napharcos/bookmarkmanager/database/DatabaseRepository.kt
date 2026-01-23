@@ -1,7 +1,6 @@
 package org.napharcos.bookmarkmanager.database
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.Flow
 import org.napharcos.bookmarkmanager.Bookmarks
 import org.napharcos.bookmarkmanager.FileSystemDirectoryHandle
 

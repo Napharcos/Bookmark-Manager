@@ -69,4 +69,7 @@ object Values {
     const val LIBRARIES = "libraries"
     const val LANG = "lang"
     const val CHANGE_BACKUP_FOLDER = "change_backup_folder"
+    const val IMPORT_BACKUP = "import_backup"
+    const val LOAD = "load"
+    const val SOURCE_CODE = "source_code"
 }

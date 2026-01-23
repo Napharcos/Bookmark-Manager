@@ -40,6 +40,7 @@ import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Hr
 import org.jetbrains.compose.web.dom.Text
 import org.napharcos.bookmarkmanager.data.Constants
+import kotlin.js.Promise
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
@@ -159,9 +160,11 @@ fun <T> List<T>.moveLastToFirst(apply: Boolean = true): List<T> {
     return listOf(last) + this.dropLast(1)
 }
 
-suspend fun downloadImage(directory: FileSystemDirectoryHandle?, image: String, imageId: String) {
-    val dir = directory ?: throw IllegalStateException("Directory not selected")
-    val response = window.fetch(image).await()
+suspend fun getImageData(img: String, id: String): Pair<org.w3c.files.Blob, String> {
+    val response = window.fetch(img).await()
+
+    if (!response.ok) throw Exception("Image not found")
+
     val blob = response.blob().await()
 
     val ext = when (blob.type) {
@@ -172,13 +175,8 @@ suspend fun downloadImage(directory: FileSystemDirectoryHandle?, image: String, 
         ".jpg" -> "jpg"
         ".jpeg" -> "jpg"
         ".svg" -> "svg"
-        else -> "bin"
+        else -> throw Exception("Image not found")
     }
 
-    val fileName = "$imageId.$ext"
-
-    val fileHandle = dir.getFileHandle(fileName, js("{create: true}")).await()
-    val writable = fileHandle.createWritable().await()
-    writable.write(blob)
-    writable.close()
+    return blob to "$id.$ext"
 }

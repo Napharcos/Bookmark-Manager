@@ -208,5 +208,14 @@
   },
   "change_backup_folder": {
     "message": "Biztonsági másolat módosítása"
+  },
+  "import_backup": {
+    "message": "Adatok betöltése biztonsági másolatból"
+  },
+  "load": {
+    "message": "Betöltés"
+  },
+  "source_code": {
+    "message": "Forráskód"
   }
 }

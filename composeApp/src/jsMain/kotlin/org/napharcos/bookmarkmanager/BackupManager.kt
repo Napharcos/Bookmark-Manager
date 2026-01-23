@@ -1,11 +1,9 @@
 package org.napharcos.bookmarkmanager
 
-import kotlinx.browser.sessionStorage
 import kotlinx.browser.window
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.await
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -17,6 +15,10 @@ import org.khronos.webgl.Uint8Array
 import org.khronos.webgl.get
 import org.napharcos.bookmarkmanager.data.Constants
 import org.napharcos.bookmarkmanager.database.DatabaseRepository
+import org.napharcos.bookmarkmanager.FileSystemOperation.WriteTextFile
+import org.napharcos.bookmarkmanager.FileSystemOperation.WriteImageFile
+import org.napharcos.bookmarkmanager.FileSystemOperation.DeleteFile
+import org.napharcos.bookmarkmanager.FileSystemOperation.VerifyAccess
 import org.w3c.dom.get
 import org.w3c.dom.set
 import org.w3c.files.File
@@ -24,56 +26,45 @@ import org.w3c.files.FileReader
 import kotlin.js.Date
 import kotlin.js.Promise
 import kotlin.time.ExperimentalTime
+import kotlin.time.measureTime
 
 object BackupManager {
     private lateinit var database: DatabaseRepository
+    private lateinit var fileSystemWriteAPI: FileSystemWriteAPI
     private var isSaving = false
     const val CHANGES = "changes"
     private var changes = MutableStateFlow(window.localStorage[CHANGES]?.toInt() ?: 0)
     private var directory: FileSystemDirectoryHandle? = null
-    private val channel = Channel<String>(Channel.UNLIMITED)
-    val mutex = Mutex()
 
-    @OptIn(ExperimentalTime::class)
-    fun backupChanges() {
-        AppScope.scope.launch {
-            for (change in channel) {
-                mutex.withLock {
-                    directory?.writeFile(CHANGES, change, true)
-                    changes.value += 1
-                    window.localStorage[CHANGES] = changes.value.toString()
-                }
-            }
-        }
-    }
+    private val mutex = Mutex()
 
     @OptIn(ExperimentalWasmJsInterop::class)
     fun saveChanges() {
         AppScope.scope.launch {
             changes.collect {
                 if (changes.value >= 100 && !isSaving) {
-                    mutex.withLock {
-                        isSaving = true
-                        try {
+                    isSaving = true
+                    try {
+                        mutex.withLock {
                             val exportManager = ExportManager(database)
                             val text = exportManager.createBookmarksText(this)
                             val fileName = "Bookmarks - ${toDay()}"
-                            directory?.writeFile(fileName, text, false)
+                            fileSystemWriteAPI.addOperation(WriteTextFile(fileName, text))
 
                             changes.value = 0
                             window.localStorage[CHANGES] = changes.value.toString()
 
-                            directory?.removeEntry(CHANGES)
-                        } finally {
-                            isSaving = false
+                            fileSystemWriteAPI.addOperation(DeleteFile(CHANGES))
                         }
+                    } finally {
+                        isSaving = false
                     }
                 }
             }
         }
     }
 
-    fun pushChanges(bookmark: Bookmarks) {
+    suspend fun pushChanges(bookmark: Bookmarks) {
         val changesLogData = ChangesLogData(
             uuid = bookmark.uuid,
             parentId = bookmark.parentId,
@@ -85,19 +76,27 @@ object BackupManager {
             imageId = bookmark.imageId,
             undoTrash = bookmark.undoTrash
         )
-
         val text = Json.encodeToString(changesLogData)
         val bytes = text.encodeToByteArray()
 
-        channel.trySend("[${bytes.size}]$text")
+        try {
+            fileSystemWriteAPI.addOperation(WriteTextFile(CHANGES, "[${bytes.size}]$text", true))
+
+            mutex.withLock {
+                changes.value += 1
+                window.localStorage[CHANGES] = changes.value.toString()
+            }
+        } catch (e: Throwable) {
+            console.error("Failed pushing changes: ${bookmark.name}", e)
+        }
     }
 
     fun initBackupFolder(database: DatabaseRepository, dir: FileSystemDirectoryHandle?) {
         AppScope.scope.launch {
             BackupManager.database = database
-            directory = dir
+             directory = dir
 
-            backupChanges()
+            fileSystemWriteAPI = FileSystemWriteAPI(directory)
             saveChanges()
         }
     }
@@ -125,12 +124,12 @@ object BackupManager {
             val changes = files.firstOrNull { it.name == CHANGES }
 
             if (changes != null) {
-                files.readAndApplyChanges(changes)
+                files.readAndApplyChanges(scope, changes)
             }
         }
     }
 
-    suspend fun List<FileSystemFileHandle>.readAndApplyChanges(fileHandle: FileSystemFileHandle) {
+    suspend fun List<FileSystemFileHandle>.readAndApplyChanges(scope: CoroutineScope, fileHandle: FileSystemFileHandle) {
         val file = fileHandle.getFile().await()
 
         val buffer = (file.asDynamic().arrayBuffer() as Promise<ArrayBuffer>).await()
@@ -141,7 +140,9 @@ object BackupManager {
         changes.forEach { c ->
             val change = Json.decodeFromString<ChangesLogData>(c)
 
-            database.addBookmark(change.toBookmarks())
+            if (change.parentId != Constants.DELETED)
+                database.addBookmark(change.toBookmarks())
+            else database.deleteBookmark(scope, change.uuid)
         }
 
         val acceptedFormats = listOf("png", "jpg", "jpeg", "svg")
@@ -203,21 +204,30 @@ object BackupManager {
         return result
     }
 
-    suspend fun backupImage(image: String, imageId: String) = downloadImage(directory, image, imageId)
+    suspend fun backupImage(image: String, imageId: String) {
+        val imageData = try { getImageData(image, imageId) } catch (_: Exception) { return }
 
-    fun changeBackupFolder(onComplete: () -> Unit) {
+        fileSystemWriteAPI.addOperation(WriteImageFile(imageData.second, imageData.first))
+    }
+
+    suspend fun deleteImage(oldImage: String, oldImageId: String) {
+        val imageData = try { getImageData(oldImage, oldImageId) } catch (_: Exception) { return }
+        fileSystemWriteAPI.addOperation(DeleteFile(imageData.second))
+    }
+
+    fun changeBackupFolder(reload: Boolean = false, onComplete: () -> Unit) {
         AppScope.scope.launch {
             directory = showDirectoryPicker().await()
 
-            if (directory != null && directory?.isWritable() == true) {
-                if (!isOpera) database.saveBackupDir(directory!!)
+            if (directory == null || directory?.isWritable() != true) return@launch
 
-                if (getBackupFiles().isEmpty()) {
-                    createFirstBackup()
-                } else if (database.getChilds(this, "").isEmpty()) {
-                    restoreBackup(this)
-                    onComplete()
-                }
+            if (!isOpera) database.saveBackupDir(directory!!)
+
+            if (getBackupFiles().isEmpty()) {
+                createFirstBackup()
+            } else if (reload || database.getChilds(this, "").isEmpty()) {
+                restoreBackup(this)
+                onComplete()
             }
         }
     }
@@ -231,7 +241,7 @@ object BackupManager {
 
             val fileName = "Bookmarks - ${toDay()}"
             try {
-                directory?.writeFile(fileName, text, false)
+                fileSystemWriteAPI.addOperation(WriteTextFile(fileName, text))
             } catch (_: Throwable) {
                 console.log("Failed to crete backup file: $fileName")
             }
@@ -251,6 +261,10 @@ object BackupManager {
 
         return "$year-$month-$day"
     }
+
+    suspend fun verifyDir(): Boolean = fileSystemWriteAPI.verifyDir()
+
+    suspend fun shutDown() = fileSystemWriteAPI.shutDown()
 
     @Serializable
     data class ChangesLogData(

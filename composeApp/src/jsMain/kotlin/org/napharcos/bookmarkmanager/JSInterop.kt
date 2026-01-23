@@ -83,39 +83,9 @@ suspend fun FileSystemDirectoryHandle.listFiles(): List<FileSystemFileHandle> {
     return files
 }
 
-
-suspend fun FileSystemDirectoryHandle.writeFile(
-    name: String,
-    content: String,
-    keep: Boolean = false
-) {
-    val fileHandle = getFileHandle(name, js("{ create: true }")).await()
-
-    val writable = if (keep) fileHandle.createWritable(js("{ keepExistingData: true }")).await()
-        else fileHandle.createWritable().await()
-
-    if (keep) {
-        val file = fileHandle.getFile().await()
-        writable.seek(file.size.toInt())
-    }
-
-    (writable.write(content) as Promise<Unit>).await()
-    (writable.close() as Promise<Unit>).await()
-}
-
 suspend fun FileSystemDirectoryHandle.isWritable(): Boolean {
     val permission = this.requestPermission(js("{ mode: 'readwrite' }")).await()
     return permission == "granted"
-}
-
-suspend fun FileSystemDirectoryHandle.testWriteAccess(): Boolean {
-    return try {
-        writeFile("TEST", "TEST")
-        removeEntry("TEST").await()
-        true
-    } catch (_: Throwable) {
-        false
-    }
 }
 
 val isOpera = isOpera()

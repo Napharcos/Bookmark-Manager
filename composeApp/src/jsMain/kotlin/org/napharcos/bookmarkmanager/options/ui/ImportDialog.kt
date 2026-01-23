@@ -1,8 +1,11 @@
 package org.napharcos.bookmarkmanager.options.ui
 
 import androidx.compose.runtime.*
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.*
+import org.napharcos.bookmarkmanager.AppScope
+import org.napharcos.bookmarkmanager.BackupManager
 import org.napharcos.bookmarkmanager.ImportManager
 import org.napharcos.bookmarkmanager.ViewModel
 import org.napharcos.bookmarkmanager.data.Values
@@ -15,6 +18,12 @@ fun ImportDialog(
     onClose: () -> Unit
 ) {
     var cancelEntered by remember { mutableStateOf(false) }
+
+    var dirVerified by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        dirVerified = BackupManager.verifyDir()
+    }
 
     Div(
         attrs = {
@@ -32,7 +41,7 @@ fun ImportDialog(
                     borderRadius(12.px)
                     padding(8.px)
                     width(450.px)
-                    height(250.px)
+                    height(280.px)
                     textAlign("center")
                     property("box-shadow", "rgba(0, 0, 0, 0.3) 0px 4px 12px")
                 }
@@ -77,6 +86,19 @@ fun ImportDialog(
                     tooltip = ImportManager.VIVALDI_IMAGE_FOLDER_PATH.trimMargin(),
                     buttonText = getString(Values.BROWSE),
                     onClick = { viewModel.importVivaldiImages() }
+                )
+                ImportElement(
+                    text = getString(Values.IMPORT_BACKUP),
+                    tooltip = null,
+                    buttonText = if (dirVerified) getString(Values.LOAD) else getString(Values.BROWSE),
+                    onClick = {
+                        AppScope.scope.launch {
+                            if (dirVerified) {
+                                BackupManager.restoreBackup(this)
+                                viewModel.reloadData()
+                            } else BackupManager.changeBackupFolder(true) { viewModel.reloadData() }
+                        }
+                    }
                 )
             }
             Button(

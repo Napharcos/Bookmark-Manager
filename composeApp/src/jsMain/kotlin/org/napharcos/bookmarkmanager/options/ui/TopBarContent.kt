@@ -1,6 +1,7 @@
 package org.napharcos.bookmarkmanager.options.ui
 
 import androidx.compose.runtime.*
+import kotlinx.browser.window
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.max
 import org.jetbrains.compose.web.attributes.min
@@ -121,7 +122,13 @@ fun RightElements(
                 darkening = uiState.darkening,
                 icon = librariesIcon(uiState.textColor.toHex()),
                 tooltip = getString(Values.LIBRARIES),
-                onClick = { viewModel.updateShowingLibraries(true) },
+                onClick = { viewModel.updateShowingLibraries(true) }
+            )
+            IconElement(
+                darkening = uiState.darkening,
+                icon = githubIcon(uiState.textColor.toHex()),
+                tooltip = getString(Values.SOURCE_CODE),
+                onClick = { window.open("https://github.com/Napharcos/Bookmark-Manager", "_blank") },
                 last = true
             )
         }

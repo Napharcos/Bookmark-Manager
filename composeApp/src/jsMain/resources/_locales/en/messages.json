@@ -208,5 +208,14 @@
   },
   "change_backup_folder": {
     "message": "Change backup folder"
+  },
+  "import_backup": {
+    "message": "Load data from backup"
+  },
+  "load": {
+    "message": "Load"
+  },
+  "source_code": {
+    "message": "Source code"
   }
 }

@@ -5,3 +5,8 @@ Permission is granted to use the software for personal or non-commercial purpose
 The source code of this software is publicly available for transparency and to ensure trustworthiness. However, any use of the source code is subject to the terms of this license.
 
 For any other use, explicit permission from the author is required.
+
+This software and its components are provided "as is", without any warranties, express or implied, including but not limited to merchantability or fitness for a particular purpose.
+Use at your own risk.
+
+The author assumes no responsibility for any resulting issues or damages.

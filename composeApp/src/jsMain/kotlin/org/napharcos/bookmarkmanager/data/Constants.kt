@@ -14,4 +14,5 @@ object Constants {
     const val FAKE = "fake"
     const val LAST_FOLDER = "last_folder"
     const val LAST_OPEN_FOLDER = "last_open_folder"
+    const val DELETED = "deleted"
 }

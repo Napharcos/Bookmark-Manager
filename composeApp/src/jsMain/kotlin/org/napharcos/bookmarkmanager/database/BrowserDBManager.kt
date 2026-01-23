@@ -23,7 +23,7 @@ import org.w3c.dom.events.Event
 import kotlin.js.unsafeCast
 
 @OptIn(DelicateCoroutinesApi::class)
-class BrowserDBManager(): DatabaseRepository {
+class BrowserDBManager: DatabaseRepository {
 
     companion object {
         const val DB_NAME = "bookmarks_data"

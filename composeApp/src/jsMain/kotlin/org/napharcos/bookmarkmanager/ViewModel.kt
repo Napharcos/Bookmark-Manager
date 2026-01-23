@@ -52,9 +52,11 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
             var showDialog = false
             val backupDir = if (isOpera) null else container.browserDatabase.getBackupDir(this)
 
+            val api = FileSystemWriteAPI(backupDir)
+
             if (!popup)
                 showDialog = try {
-                    backupDir == null || !backupDir.isWritable() || !backupDir.testWriteAccess()
+                    backupDir == null || !backupDir.isWritable() || !api.verifyDir()
                 } catch (_: Throwable) { true }
 
             if (showDialog)
@@ -146,7 +148,11 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
             val pageData = uiState.value.pageData
             val bookmarkData = pageData?.url?.let { container.browserDatabase.getBookmarkByUrl(this, it) }
 
-            bookmarkData?.let { container.browserDatabase.deleteBookmark(this, it.uuid) }
+            bookmarkData?.let {
+                container.browserDatabase.deleteBookmark(this, it.uuid)
+                BackupManager.pushChanges(it.copy(parentId = Constants.DELETED))
+                BackupManager.deleteImage(bookmarkData.image, bookmarkData.imageId)
+            }
 
             chrome.tabs.query(js("{active: true, currentWindow: true}")) { tabs ->
                 val tab = tabs[0] ?: return@query
@@ -154,6 +160,7 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
 
                 updateIcon(tabId, false)
             }
+            BackupManager.shutDown()
             window.close()
         }
     }
@@ -164,7 +171,6 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
             val parent = uiState.value.selectedFolder
             val pageData = uiState.value.pageData
             val bookmarkData = pageData?.url?.let { container.browserDatabase.getBookmarkByUrl(this, it) }
-            val imageId = if (image != bookmarkData?.image) Uuid.random().toHexString() else bookmarkData.imageId
 
             if (image != bookmarkData?.image || parent != bookmarkData.parentId) {
                 val bookmark = bookmarkData?.copy(
@@ -183,8 +189,12 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
 
                 container.browserDatabase.addBookmark(bookmark, true)
                 BackupManager.pushChanges(bookmark)
-                if (image != bookmarkData?.image)
-                    BackupManager.backupImage(image, imageId)
+                if (image != bookmarkData?.image) {
+                    bookmarkData?.let {
+                        BackupManager.deleteImage(it.image, it.imageId)
+                    }
+                    BackupManager.backupImage(image, bookmark.imageId)
+                }
 
                 window.localStorage[Constants.LAST_FOLDER] = parent
             }
@@ -194,6 +204,7 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
 
                 updateIcon(tabId, true)
             }
+            BackupManager.shutDown()
             window.close()
         }
     }
@@ -363,7 +374,7 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
     fun onSelectElementClick(select: Boolean, bookmark: String) {
         _uiState.update {
             it.copy(
-                selectedElements = if (select) it.selectedElements + bookmark else it.selectedElements - bookmark
+                selectedElements = if (select) (it.selectedElements + bookmark).distinct() else it.selectedElements - bookmark
             )
         }
     }
@@ -427,8 +438,13 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
         if (!visited.add(element)) return
 
         val browserChilds = container.browserDatabase.getChilds(scope, element)
+        val elementData = container.browserDatabase.getBookmark(scope, element)
 
         container.browserDatabase.deleteBookmark(scope, element)
+        elementData?.let {
+            BackupManager.pushChanges(it.copy(parentId = Constants.DELETED))
+            BackupManager.deleteImage(it.image, it.imageId)
+        }
 
         val allChilds = browserChilds.map { it.uuid }.distinct()
 
@@ -472,13 +488,15 @@ class ViewModel(private val container: Container, private val popup: Boolean) {
                 name = name.ifEmpty { bookmark.name },
                 url = url.ifEmpty { bookmark.url },
                 imageId = imageId,
-                image = image.ifEmpty { bookmark.image }
+                image = image
             )
 
             container.browserDatabase.addBookmark(newBookmark, true)
             BackupManager.pushChanges(newBookmark)
-            if (image != bookmark.image)
+            if (image != bookmark.image) {
+                BackupManager.deleteImage(bookmark.image, bookmark.imageId)
                 BackupManager.backupImage(image, imageId)
+            }
 
             reloadData()
             updateEditElement(null)

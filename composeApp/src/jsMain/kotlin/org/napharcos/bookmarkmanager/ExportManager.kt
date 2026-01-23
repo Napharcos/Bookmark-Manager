@@ -13,9 +13,11 @@ import org.napharcos.bookmarkmanager.data.Constants
 import org.napharcos.bookmarkmanager.data.Values
 import org.napharcos.bookmarkmanager.database.DatabaseRepository
 import org.w3c.dom.HTMLAnchorElement
+import org.w3c.dom.ImageData
 import org.w3c.dom.url.URL
 import org.w3c.files.Blob
 import org.w3c.files.BlobPropertyBag
+import kotlin.js.Promise
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
@@ -54,9 +56,24 @@ class ExportManager(private val database: DatabaseRepository) {
 
             loadingText = getString(Values.PROCESSING_ELEMENT, it.name)
 
-            if (it.imageId.isNotEmpty() && it.image.isNotEmpty())
-                downloadImage(directory, it.image, it.imageId)
+            if (it.imageId.isNotEmpty() && it.image.isNotEmpty()) {
+                try {
+                    downloadImage(directory, it.image, it.imageId)
+                } catch (e: Exception) {
+                    console.error("Download image failed:", e)
+                }
+            }
         }
+    }
+
+    private suspend fun downloadImage(directory: FileSystemDirectoryHandle?, image: String, imageId: String) {
+        val dir = directory ?: throw IllegalStateException("Directory not selected")
+        val imageData = try { getImageData(image, imageId) } catch (_: Exception){ return }
+
+        val fileHandle = dir.getFileHandle(imageData.second, js("{create: true}")).await()
+        val writable = fileHandle.createWritable().await()
+        (writable.write(imageData.first) as Promise<Unit>).await()
+        (writable.close() as Promise<Unit>).await()
     }
 
     @OptIn(ExperimentalWasmJsInterop::class)

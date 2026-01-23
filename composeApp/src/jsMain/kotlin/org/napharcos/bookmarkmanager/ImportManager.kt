@@ -195,7 +195,7 @@ class ImportManager(
     }
 
     @OptIn(ExperimentalUuidApi::class)
-    private fun addBookmark(
+    private suspend fun addBookmark(
         element: BookmarkData,
         parentId: String,
         nextIndex: Int,
